@@ -270,7 +270,11 @@ export default class HaloPlusPlugin extends Plugin {
       }
     } catch (error) {
       console.error('Failed to publish to Halo:', error);
-      new Notice(`Failed to publish: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      new Notice(
+        t('modals.publish.failedToPublish', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+        }),
+      );
       throw error;
     }
   }
@@ -310,7 +314,11 @@ export default class HaloPlusPlugin extends Plugin {
       new Notice(t('notices.deleted', { title: frontmatter.title || file.basename }));
     } catch (error) {
       console.error('Failed to delete from Halo:', error);
-      new Notice(`Failed to delete: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      new Notice(
+        t('notices.failedToDelete', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+        }),
+      );
     }
   }
 

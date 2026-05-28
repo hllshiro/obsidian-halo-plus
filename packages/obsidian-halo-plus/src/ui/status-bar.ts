@@ -1,4 +1,5 @@
 import type { App, StatusBar as ObsidianStatusBar, Plugin } from 'obsidian';
+import { t } from '../i18n';
 
 /**
  * 状态栏指示器
@@ -35,7 +36,7 @@ export class StatusBar {
 
     if (this.lastSyncTime) {
       const timeStr = this.lastSyncTime.toLocaleTimeString();
-      displayText += ` | Last sync: ${timeStr}`;
+      displayText += ` | ${t('statusBar.lastSync', { time: timeStr })}`;
     }
 
     this.statusBarEl.setText(displayText);
@@ -61,7 +62,7 @@ export class StatusBar {
    * 显示同步中状态
    */
   showSyncing(): void {
-    this.setStatus('Halo Plus | Syncing...');
+    this.setStatus(`Halo Plus | ${t('statusBar.syncing')}`);
   }
 
   /**
@@ -75,7 +76,7 @@ export class StatusBar {
    * 显示错误状态
    */
   showError(message: string): void {
-    this.setStatus(`Halo Plus | Error: ${message}`);
+    this.setStatus(`Halo Plus | ${t('statusBar.error', { message })}`);
   }
 
   /**

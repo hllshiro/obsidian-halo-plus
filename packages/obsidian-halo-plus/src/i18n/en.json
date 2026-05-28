@@ -5,7 +5,12 @@
       "title": "Site Management",
       "addSite": "Add Site",
       "editSite": "Edit Site",
-      "deleteSite": "Delete"
+      "deleteSite": "Delete",
+      "siteName": "Site Name",
+      "siteURL": "Site URL",
+      "apiToken": "API Token",
+      "defaultSite": "Default Site",
+      "save": "Save"
     },
     "publishBehavior": {
       "title": "Publish Behavior",

@@ -5,7 +5,12 @@
       "title": "站点管理",
       "addSite": "添加站点",
       "editSite": "编辑站点",
-      "deleteSite": "删除"
+      "deleteSite": "删除",
+      "siteName": "站点名称",
+      "siteURL": "站点 URL",
+      "apiToken": "API Token",
+      "defaultSite": "默认站点",
+      "save": "保存"
     },
     "publishBehavior": {
       "title": "发布行为",
