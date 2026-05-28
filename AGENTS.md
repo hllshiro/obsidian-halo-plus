@@ -66,6 +66,8 @@ Triggered by git tags. Release workflow:
 2. Builds all packages
 3. Publishes `main.js`, `manifest.json`, `styles.css` as GitHub Release assets
 
+**Version Format:** Git tags and versions must be pure numeric `x.x.x` format (e.g., `1.0.0`). Do NOT prefix with `v`. Obsidian does not accept `v`-prefixed version strings.
+
 Update version in both `package.json` and `manifest.json` before tagging.
 
 ## Key Files

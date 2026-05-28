@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.0] - 2024-XX-XX
+## [0.1.0] - 2026-05-28
 
 ### Added
 - 核心渲染引擎：抓取 Obsidian previewMode DOM，支持所有插件语法
@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 图片处理：支持上传到 Halo 或 Base64 内嵌
 - 状态栏指示器：显示同步状态和最后同步时间
 - halo-sdk：独立的 Halo REST API 封装
+- 版本格式规范：Git tag 必须使用纯数字 `x.x.x` 格式，不能以 `v` 开头
 
 ### Changed
 - 无
