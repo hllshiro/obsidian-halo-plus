@@ -1,0 +1,59 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # 校验版本一致性
+      - name: Verify version consistency
+        run: |
+          PACKAGE_VERSION=$(node -p "require('./packages/obsidian-halo-plus/package.json').version")
+          MANIFEST_VERSION=$(node -p "require('./packages/obsidian-halo-plus/manifest.json').version")
+          if [ "$PACKAGE_VERSION" != "$MANIFEST_VERSION" ]; then
+            echo "Version mismatch: package.json=$PACKAGE_VERSION, manifest.json=$MANIFEST_VERSION"
+            exit 1
+          fi
+          TAG_VERSION=${GITHUB_REF#refs/tags/}
+          if [ "$PACKAGE_VERSION" != "$TAG_VERSION" ]; then
+            echo "Version mismatch: package.json=$PACKAGE_VERSION, tag=$TAG_VERSION"
+            exit 1
+          fi
+
+      # 构建所有包
+      - run: pnpm build
+
+      # 运行测试
+      - run: pnpm test
+
+      # 创建 GitHub Release
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            packages/obsidian-halo-plus/dist/main.js
+            packages/obsidian-halo-plus/manifest.json
+            packages/obsidian-halo-plus/styles.css
+          body_path: packages/obsidian-halo-plus/CHANGELOG.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

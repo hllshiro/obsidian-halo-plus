@@ -1,0 +1,100 @@
+import { App, Modal } from 'obsidian';
+
+/**
+ * 发布确认弹窗
+ */
+export class PublishModal extends Modal {
+  private title: string;
+  private tags: string[];
+  private categories: string[];
+  private site: string;
+  private content: string;
+  private imageMode: 'upload' | 'base64';
+  private onConfirm: (imageMode: 'upload' | 'base64') => void;
+
+  constructor(
+    app: App,
+    options: {
+      title: string;
+      tags: string[];
+      categories: string[];
+      site: string;
+      content: string;
+      imageMode: 'upload' | 'base64';
+      onConfirm: (imageMode: 'upload' | 'base64') => void;
+    },
+  ) {
+    super(app);
+    this.title = options.title;
+    this.tags = options.tags;
+    this.categories = options.categories;
+    this.site = options.site;
+    this.content = options.content;
+    this.imageMode = options.imageMode;
+    this.onConfirm = options.onConfirm;
+  }
+
+  onOpen(): void {
+    const { contentEl } = this;
+    contentEl.empty();
+
+    contentEl.createEl('h2', { text: 'Publish to Halo' });
+
+    // 文章信息
+    const infoEl = contentEl.createDiv({ cls: 'publish-modal-info' });
+
+    const titleEl = infoEl.createDiv({ cls: 'publish-modal-title' });
+    titleEl.createEl('strong', { text: 'Title: ' });
+    titleEl.createEl('span', { text: this.title });
+
+    if (this.tags.length > 0) {
+      const tagsEl = infoEl.createDiv({ cls: 'publish-modal-tags' });
+      tagsEl.createEl('strong', { text: 'Tags: ' });
+      tagsEl.createEl('span', { text: this.tags.join(', ') });
+    }
+
+    if (this.categories.length > 0) {
+      const categoriesEl = infoEl.createDiv({ cls: 'publish-modal-categories' });
+      categoriesEl.createEl('strong', { text: 'Categories: ' });
+      categoriesEl.createEl('span', { text: this.categories.join(', ') });
+    }
+
+    const siteEl = infoEl.createDiv({ cls: 'publish-modal-site' });
+    siteEl.createEl('strong', { text: 'Site: ' });
+    siteEl.createEl('span', { text: this.site });
+
+    // 内容预览
+    const previewEl = contentEl.createDiv({ cls: 'publish-modal-preview' });
+    previewEl.createEl('h3', { text: 'Content Preview' });
+    const previewContent = previewEl.createDiv({ cls: 'publish-modal-preview-content' });
+    previewContent.innerHTML = this.content.substring(0, 500) + (this.content.length > 500 ? '...' : '');
+
+    // 图片处理模式
+    const imageModeEl = contentEl.createDiv({ cls: 'publish-modal-image-mode' });
+    imageModeEl.createEl('label', { text: 'Image handling: ' });
+    const selectEl = imageModeEl.createEl('select');
+    selectEl.createEl('option', { text: 'Upload to Halo', value: 'upload' });
+    selectEl.createEl('option', { text: 'Embed as Base64', value: 'base64' });
+    selectEl.value = this.imageMode;
+    selectEl.addEventListener('change', (e) => {
+      this.imageMode = (e.target as HTMLSelectElement).value as 'upload' | 'base64';
+    });
+
+    // 按钮
+    const buttonEl = contentEl.createDiv({ cls: 'publish-modal-button' });
+
+    const cancelButton = buttonEl.createEl('button', { text: 'Cancel' });
+    cancelButton.addEventListener('click', () => this.close());
+
+    const confirmButton = buttonEl.createEl('button', { text: 'Publish', cls: 'mod-cta' });
+    confirmButton.addEventListener('click', () => {
+      this.onConfirm(this.imageMode);
+      this.close();
+    });
+  }
+
+  onClose(): void {
+    const { contentEl } = this;
+    contentEl.empty();
+  }
+}
