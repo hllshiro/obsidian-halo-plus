@@ -12,12 +12,14 @@
     "lint:fix": "biome check . --write",
     "format": "biome format . --write",
     "dev": "pnpm -r run dev",
-    "clean": "pnpm -r run clean"
+    "clean": "pnpm -r run clean",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.5.3",
-    "typescript": "^5.3.0",
-    "esbuild": "^0.19.0"
+    "esbuild": "^0.19.0",
+    "husky": "^9.1.7",
+    "typescript": "^5.3.0"
   },
   "engines": {
     "node": ">=16.0.0",
