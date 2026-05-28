@@ -52,6 +52,10 @@ pnpm-debug.log*
 
 # Reference code (external repos for study)
 reference/
+superpowers/
+
+# Allow docs/superpowers
+!docs/superpowers/
 
 # Local test scripts
 test.sh
