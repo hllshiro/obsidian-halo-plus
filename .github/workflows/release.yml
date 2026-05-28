@@ -35,6 +35,7 @@ jobs:
             exit 1
           fi
           TAG_VERSION=${GITHUB_REF#refs/tags/}
+          TAG_VERSION=${TAG_VERSION#v}
           if [ "$PACKAGE_VERSION" != "$TAG_VERSION" ]; then
             echo "Version mismatch: package.json=$PACKAGE_VERSION, tag=$TAG_VERSION"
             exit 1
@@ -51,6 +52,5 @@ jobs:
             packages/obsidian-halo-plus/dist/main.js
             packages/obsidian-halo-plus/manifest.json
             packages/obsidian-halo-plus/styles.css
-          body_path: packages/obsidian-halo-plus/CHANGELOG.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
