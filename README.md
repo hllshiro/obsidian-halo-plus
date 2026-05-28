@@ -1,158 +1,160 @@
 # Halo Plus
 
-> 将 Obsidian 笔记发布到 Halo 博客，支持所有 Obsidian 插件渲染内容（Dataview、Tasks、Callout 等）
+> Publish notes to Halo blog with native rendering support for all plugins (Dataview, Tasks, Callout, etc.)
 
-[![GitHub release](https://img.shields.io/github/v/release/yourusername/obsidian-halo-plus)](https://github.com/yourusername/obsidian-halo-plus/releases)
-[![GitHub](https://img.shields.io/github/license/yourusername/obsidian-halo-plus)](LICENSE)
+[![GitHub release](https://img.shields.io/github/v/release/hllshiro/obsidian-halo-plus)](https://github.com/hllshiro/obsidian-halo-plus/releases)
+[![GitHub](https://img.shields.io/github/license/hllshiro/obsidian-halo-plus)](LICENSE)
 
-## ✨ 特性
+[中文文档](README-zh.md)
 
-- 🎨 **原生渲染**：抓取 Obsidian 完整渲染后的 HTML，支持所有已安装插件
-- 📤 **一键发布**：命令面板或右键菜单，快速发布到 Halo
-- 🔄 **自动同步**：配置文件夹，保存即发布
-- 🖼️ **图片处理**：支持上传到 Halo 或 Base64 内嵌
-- 🔒 **离线可用**：纯本地运行，无外网依赖
-- 🗑️ **文章管理**：支持发布、更新、删除
+## Features
 
-## 📦 安装
+- **Native Rendering**: Captures fully rendered HTML from Obsidian, supporting all installed plugins
+- **One-Click Publishing**: Command palette or right-click menu for quick publishing to Halo
+- **Auto Sync**: Configure folders to auto-publish on save
+- **Image Processing**: Upload to Halo or embed as Base64
+- **Offline Support**: Pure local execution, no external dependencies
+- **Article Management**: Publish, update, and delete articles
 
-### 从 Obsidian 社区插件安装（推荐）
+## Installation
 
-1. 打开 Obsidian 设置 → 第三方插件 → 浏览
-2. 搜索 "Halo Plus"
-3. 点击安装，然后启用
+### Install from Community Plugins (Recommended)
 
-### 手动安装（离线）
+1. Open Obsidian Settings → Community Plugins → Browse
+2. Search for "Halo Plus"
+3. Click Install, then Enable
 
-1. 从 [GitHub Releases](https://github.com/yourusername/obsidian-halo-plus/releases) 下载最新版本
-2. 解压到 `{vault}/.obsidian/plugins/halo-plus/`
-3. 在 Obsidian 设置 → 第三方插件中启用 "Halo Plus"
+### Manual Installation (Offline)
 
-## 🚀 快速开始
+1. Download `main.js`, `manifest.json`, `styles.css` from [GitHub Releases](https://github.com/hllshiro/obsidian-halo-plus/releases)
+2. Copy these three files to `{vault}/.obsidian/plugins/halo-plus/`
+3. Enable "Halo Plus" in Obsidian Settings → Community Plugins
 
-### 1. 配置 Halo 站点
+## Quick Start
 
-1. 打开 Obsidian 设置 → Halo Plus
-2. 点击 "添加站点"
-3. 填写：
-   - **站点名称**：My Blog
-   - **站点地址**：https://halo.example.com
-   - **API Token**：在 Halo 后台 → 个人中心 → 个人令牌 创建
-4. 点击 "验证连接" 测试
+### 1. Configure Halo Site
 
-### 2. 发布笔记
+1. Open Obsidian Settings → Halo Plus
+2. Click "Add Site"
+3. Fill in:
+   - **Site Name**: My Blog
+   - **Site URL**: https://halo.example.com
+   - **API Token**: Create in Halo Dashboard → Personal Center → Personal Access Tokens
+4. Click "Test Connection" to verify
 
-1. 编辑笔记，在 FrontMatter 中设置元数据：
+### 2. Publish Notes
+
+1. Edit your note and set metadata in FrontMatter:
 
 ```yaml
 ---
-title: "我的文章标题"
+title: "My Article Title"
 tags:
-  - "技术"
+  - "Tech"
   - "Obsidian"
 categories:
-  - "博客"
+  - "Blog"
 ---
 ```
 
-2. 通过以下方式发布：
-   - 命令面板：`Ctrl/Cmd + P` → 输入 "Halo Plus: 发布到 Halo"
-   - 右键菜单：在编辑器中右键 → "发布到 Halo"
+2. Publish via:
+   - Command Palette: `Ctrl/Cmd + P` → type "Halo Plus: Publish to Halo"
+   - Right-click menu: Right-click in editor → "Publish to Halo"
 
-### 3. 自动同步
+### 3. Auto Sync
 
-1. 在设置中启用 "文件夹同步"
-2. 添加需要同步的文件夹路径
-3. 编辑并保存笔记后自动发布
+1. Enable "Folder Sync" in settings
+2. Add folder paths to sync
+3. Notes auto-publish after editing and saving
 
-## ⚙️ 配置项
+## Configuration
 
-### 站点配置
+### Site Configuration
 
-| 配置项 | 说明 | 默认值 |
-|--------|------|--------|
-| 站点名称 | 显示名称 | - |
-| 站点地址 | Halo 服务器 URL | - |
-| API Token | 个人访问令牌 | - |
-| 默认站点 | 是否为默认发布站点 | false |
+| Setting | Description | Default |
+|---------|-------------|---------|
+| Site Name | Display name | - |
+| Site URL | Halo server URL | - |
+| API Token | Personal access token | - |
+| Default Site | Whether this is the default publish site | false |
 
-### 发布行为
+### Publishing Behavior
 
-| 配置项 | 说明 | 默认值 |
-|--------|------|--------|
-| 默认发布后自动发布 | 创建文章后自动发布 | true |
-| 跳过预览直接发布 | 不弹出确认窗口 | false |
-| 发布后清理临时文件 | 渲染后清理临时副本 | true |
+| Setting | Description | Default |
+|---------|-------------|---------|
+| Auto Publish | Auto publish after creating article | true |
+| Skip Preview | Publish without confirmation dialog | false |
+| Clean Temp Files | Clean temp files after rendering | true |
 
-### 图片处理
+### Image Processing
 
-| 配置项 | 说明 | 默认值 |
-|--------|------|--------|
-| 默认模式 | 上传到 Halo / Base64 内嵌 | upload |
-| Base64 压缩质量 | 0-100 | 80 |
+| Setting | Description | Default |
+|---------|-------------|---------|
+| Default Mode | Upload to Halo / Embed as Base64 | upload |
+| Base64 Quality | 0-100 | 80 |
 
-## 📝 FrontMatter 属性
+## FrontMatter Properties
 
-| 属性 | 类型 | 说明 | 必需 |
-|------|------|------|------|
-| `title` | string | 文章标题 | 否（默认使用文件名） |
-| `slug` | string | URL slug | 否（自动生成） |
-| `tags` | string[] | 标签列表 | 否 |
-| `categories` | string[] | 分类列表 | 否 |
-| `cover` | string | 封面图片 URL | 否 |
-| `excerpt` | string | 文章摘要 | 否 |
-| `date` | string | 发布时间 | 否（默认使用创建时间） |
+| Property | Type | Description | Required |
+|----------|------|-------------|----------|
+| `title` | string | Article title | No (defaults to filename) |
+| `slug` | string | URL slug | No (auto-generated) |
+| `tags` | string[] | Tag list | No |
+| `categories` | string[] | Category list | No |
+| `cover` | string | Cover image URL | No |
+| `excerpt` | string | Article excerpt | No |
+| `date` | string | Publish time | No (defaults to creation time) |
 
-### Halo 跟踪字段（自动管理）
+### Halo Tracking Fields (Auto-managed)
 
-| 属性 | 说明 |
-|------|------|
-| `halo.site` | 关联的 Halo 站点 URL |
-| `halo.name` | Halo 文章 ID |
-| `halo.publish` | 是否已发布 |
+| Property | Description |
+|----------|-------------|
+| `halo.site` | Associated Halo site URL |
+| `halo.name` | Halo article ID |
+| `halo.publish` | Whether published |
 
-## 🔧 开发
+## Development
 
-### 环境要求
+### Requirements
 
 - Node.js 16+
 - pnpm 8+
 
-### 本地开发
+### Local Development
 
 ```bash
-# 克隆仓库
-git clone https://github.com/yourusername/obsidian-halo-plus.git
+# Clone repository
+git clone https://github.com/hllshiro/obsidian-halo-plus.git
 cd obsidian-halo-plus
 
-# 安装依赖
+# Install dependencies
 pnpm install
 
-# 构建所有包
+# Build all packages
 pnpm build
 
-# 开发模式（监听文件变化）
+# Development mode (watch for changes)
 pnpm dev
 ```
 
-### 项目结构
+### Project Structure
 
 ```
 obsidian-halo-plus/
 ├── packages/
 │   ├── halo-sdk/              # Halo REST API SDK
-│   ├── obsidian-halo-plus/    # Obsidian 插件
-│   └── halo-cli/              # CLI 工具
+│   ├── obsidian-halo-plus/    # Obsidian plugin
+│   └── halo-cli/              # CLI tool
 ├── pnpm-workspace.yaml
 └── package.json
 ```
 
-## 📄 许可证
+## License
 
 [MIT](LICENSE)
 
-## 🙏 致谢
+## Acknowledgments
 
-- [obsidian-halo](https://github.com/halo-sigs/obsidian-halo) - 原版插件参考
-- [Obsidian](https://obsidian.md) - 优秀的笔记应用
-- [Halo](https://halo.run) - 强大的博客平台
+- [obsidian-halo](https://github.com/halo-sigs/obsidian-halo) - Original plugin reference
+- [Obsidian](https://obsidian.md) - Excellent note-taking app
+- [Halo](https://halo.run) - Powerful blogging platform
