@@ -2,6 +2,7 @@ import { HaloClient, type HaloPost, PostService } from '@obsidian-halo-plus/halo
 import { Component, Notice, Plugin, TFile } from 'obsidian';
 import { generateSlug, parseFrontMatter, stringifyFrontMatter } from './content/frontmatter-parser';
 import { ImageHandler } from './content/image-handler';
+import { i18n, t } from './i18n';
 import { PreviewRenderer } from './renderer/preview-renderer';
 import { PublishPreviewModal } from './ui/publish-preview-modal';
 import { SettingsTab } from './ui/settings-tab';
@@ -58,10 +59,13 @@ export default class HaloPlusPlugin extends Plugin {
   async onload(): Promise<void> {
     await this.loadSettings();
 
+    // 初始化 i18n
+    i18n.init(this.app);
+
     // 注册命令
     this.addCommand({
       id: 'publish-to-halo',
-      name: 'Publish to Halo',
+      name: t('commands.publishToHalo'),
       editorCallback: async (_editor, view) => {
         const file = view.file;
         if (file) {
@@ -72,7 +76,7 @@ export default class HaloPlusPlugin extends Plugin {
 
     this.addCommand({
       id: 'delete-from-halo',
-      name: 'Delete from Halo',
+      name: t('commands.deleteFromHalo'),
       editorCallback: async (_editor, view) => {
         const file = view.file;
         if (file) {
@@ -83,7 +87,7 @@ export default class HaloPlusPlugin extends Plugin {
 
     this.addCommand({
       id: 'sync-all',
-      name: 'Sync All',
+      name: t('commands.syncAll'),
       callback: async () => {
         await this.syncAll();
       },
@@ -91,7 +95,7 @@ export default class HaloPlusPlugin extends Plugin {
 
     this.addCommand({
       id: 'open-settings',
-      name: 'Open Settings',
+      name: t('commands.openSettings'),
       callback: async () => {
         // @ts-ignore - 打开设置
         this.app.setting?.open();
@@ -106,7 +110,7 @@ export default class HaloPlusPlugin extends Plugin {
         if (file instanceof TFile && file.extension === 'md') {
           menu.addItem((item) => {
             item
-              .setTitle('Publish to Halo')
+              .setTitle(t('menus.publishToHalo'))
               .setIcon('upload')
               .onClick(async () => {
                 await this.publishToHalo(file);
@@ -114,7 +118,7 @@ export default class HaloPlusPlugin extends Plugin {
           });
           menu.addItem((item) => {
             item
-              .setTitle('Delete from Halo')
+              .setTitle(t('menus.deleteFromHalo'))
               .setIcon('trash')
               .onClick(async () => {
                 await this.deleteFromHalo(file);
@@ -160,7 +164,7 @@ export default class HaloPlusPlugin extends Plugin {
 
   async publishToHalo(file: TFile): Promise<void> {
     if (this.settings.sites.length === 0) {
-      new Notice('Please configure a Halo site in settings first');
+      new Notice(t('notices.siteNotConfigured'));
       return;
     }
 
@@ -188,7 +192,7 @@ export default class HaloPlusPlugin extends Plugin {
 
       const isConnected = await client.validateConnection();
       if (!isConnected) {
-        new Notice('Failed to connect to Halo server');
+        new Notice(t('notices.connectionFailed'));
         return;
       }
 
@@ -234,7 +238,7 @@ export default class HaloPlusPlugin extends Plugin {
             await postService.publish(frontmatter.halo.name as string);
           }
 
-          new Notice(`Updated: ${effectiveTitle}`);
+          new Notice(t('notices.updated', { title: effectiveTitle }));
         } else {
           post = await postService.create({
             title: effectiveTitle,
@@ -247,7 +251,7 @@ export default class HaloPlusPlugin extends Plugin {
             content: processedHTML,
           });
 
-          new Notice(`Published: ${effectiveTitle}`);
+          new Notice(t('notices.published', { title: effectiveTitle }));
         }
 
         if (post) {
@@ -279,13 +283,13 @@ export default class HaloPlusPlugin extends Plugin {
     const frontmatter = parseFrontMatter(content);
 
     if (!frontmatter.halo?.name) {
-      new Notice('This note is not published to Halo');
+      new Notice(t('notices.noteNotPublished'));
       return;
     }
 
     const site = this.getSites().find((s) => s.url === frontmatter.halo?.site);
     if (!site) {
-      new Notice('Halo site not found');
+      new Notice(t('notices.siteNotFound'));
       return;
     }
 
@@ -303,7 +307,7 @@ export default class HaloPlusPlugin extends Plugin {
         halo: undefined,
       });
 
-      new Notice(`Deleted: ${frontmatter.title || file.basename}`);
+      new Notice(t('notices.deleted', { title: frontmatter.title || file.basename }));
     } catch (error) {
       console.error('Failed to delete from Halo:', error);
       new Notice(`Failed to delete: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -315,11 +319,11 @@ export default class HaloPlusPlugin extends Plugin {
    */
   async syncAll(): Promise<void> {
     if (!this.settings.autoSync.enabled) {
-      new Notice('Auto sync is not enabled');
+      new Notice(t('notices.autoSyncNotEnabled'));
       return;
     }
 
-    new Notice('Syncing all files...');
+    new Notice(t('notices.syncingAll'));
 
     for (const folder of this.settings.autoSync.folders) {
       const files = this.app.vault.getFiles().filter((file) => file.path.startsWith(folder));
@@ -333,7 +337,7 @@ export default class HaloPlusPlugin extends Plugin {
       }
     }
 
-    new Notice('Sync completed');
+    new Notice(t('notices.syncCompleted'));
   }
 
   /**
