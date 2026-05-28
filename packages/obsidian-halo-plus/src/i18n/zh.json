@@ -1,0 +1,89 @@
+{
+  "settings": {
+    "title": "Halo Plus 设置",
+    "siteManagement": {
+      "title": "站点管理",
+      "addSite": "添加站点",
+      "editSite": "编辑站点",
+      "deleteSite": "删除"
+    },
+    "publishBehavior": {
+      "title": "发布行为",
+      "publishByDefault": "默认发布",
+      "publishByDefaultDesc": "创建/更新后自动发布",
+      "skipPreview": "跳过预览",
+      "skipPreviewDesc": "跳过预览模态框直接发布"
+    },
+    "imageHandling": {
+      "title": "图片处理",
+      "defaultMode": "默认模式",
+      "defaultModeDesc": "如何处理笔记中的图片",
+      "uploadToHalo": "上传到 Halo",
+      "embedAsBase64": "嵌入为 Base64",
+      "base64Quality": "Base64 质量",
+      "base64QualityDesc": "压缩质量 (0-100)"
+    },
+    "autoSync": {
+      "title": "自动同步",
+      "enableAutoSync": "启用自动同步",
+      "enableAutoSyncDesc": "保存笔记时自动发布",
+      "addFolder": "添加文件夹",
+      "addFolderDesc": "添加要同步的文件夹",
+      "remove": "移除"
+    }
+  },
+  "modals": {
+    "publish": {
+      "title": "发布到 Halo",
+      "cancel": "取消",
+      "publish": "发布",
+      "publishing": "发布中...",
+      "articleInfo": "文章信息",
+      "titleLabel": "标题: ",
+      "tags": "标签: ",
+      "categories": "分类: ",
+      "site": "站点: ",
+      "contentPreview": "内容预览",
+      "imageHandling": "图片处理",
+      "targetSite": "目标站点",
+      "selectSite": "Halo 站点",
+      "selectSiteDesc": "选择要发布到的 Halo 站点",
+      "imageHandlingDesc": "如何处理内容中的图片",
+      "publishOptions": "发布选项",
+      "publishImmediately": "立即发布",
+      "publishImmediatelyDesc": "发布后将文章设为公开",
+      "failedToPublish": "发布失败: {error}",
+      "failedToRender": "渲染内容失败",
+      "renderingContent": "渲染内容中..."
+    }
+  },
+  "commands": {
+    "publishToHalo": "发布到 Halo",
+    "deleteFromHalo": "从 Halo 删除",
+    "syncAll": "同步所有",
+    "openSettings": "打开设置"
+  },
+  "menus": {
+    "publishToHalo": "发布到 Halo",
+    "deleteFromHalo": "从 Halo 删除"
+  },
+  "notices": {
+    "siteNotConfigured": "请先在设置中配置 Halo 站点",
+    "connectionFailed": "连接 Halo 服务器失败",
+    "published": "已发布: {title}",
+    "updated": "已更新: {title}",
+    "deleted": "已删除: {title}",
+    "syncCompleted": "同步完成",
+    "syncingAll": "正在同步所有文件...",
+    "autoSyncNotEnabled": "未启用自动同步",
+    "noteNotPublished": "此笔记未发布到 Halo",
+    "siteNotFound": "未找到 Halo 站点",
+    "pleaseFillAllFields": "请填写所有字段",
+    "failedToDelete": "删除失败: {error}"
+  },
+  "statusBar": {
+    "lastSync": "上次同步: {time}",
+    "syncing": "同步中...",
+    "error": "错误: {message}"
+  }
+}

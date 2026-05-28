@@ -1,0 +1,89 @@
+{
+  "settings": {
+    "title": "Halo Plus Settings",
+    "siteManagement": {
+      "title": "Site Management",
+      "addSite": "Add Site",
+      "editSite": "Edit Site",
+      "deleteSite": "Delete"
+    },
+    "publishBehavior": {
+      "title": "Publish Behavior",
+      "publishByDefault": "Publish by default",
+      "publishByDefaultDesc": "Automatically publish after creating/updating",
+      "skipPreview": "Skip preview",
+      "skipPreviewDesc": "Skip preview modal and publish directly"
+    },
+    "imageHandling": {
+      "title": "Image Handling",
+      "defaultMode": "Default mode",
+      "defaultModeDesc": "How to handle images in notes",
+      "uploadToHalo": "Upload to Halo",
+      "embedAsBase64": "Embed as Base64",
+      "base64Quality": "Base64 quality",
+      "base64QualityDesc": "Compression quality (0-100)"
+    },
+    "autoSync": {
+      "title": "Auto Sync",
+      "enableAutoSync": "Enable auto sync",
+      "enableAutoSyncDesc": "Automatically publish notes when saved",
+      "addFolder": "Add folder",
+      "addFolderDesc": "Add a folder to sync",
+      "remove": "Remove"
+    }
+  },
+  "modals": {
+    "publish": {
+      "title": "Publish to Halo",
+      "cancel": "Cancel",
+      "publish": "Publish",
+      "publishing": "Publishing...",
+      "articleInfo": "Article Info",
+      "titleLabel": "Title: ",
+      "tags": "Tags: ",
+      "categories": "Categories: ",
+      "site": "Site: ",
+      "contentPreview": "Content Preview",
+      "imageHandling": "Image Handling",
+      "targetSite": "Target Site",
+      "selectSite": "Halo Site",
+      "selectSiteDesc": "Select the Halo site to publish to",
+      "imageHandlingDesc": "How to handle images in the content",
+      "publishOptions": "Publish Options",
+      "publishImmediately": "Publish Immediately",
+      "publishImmediatelyDesc": "Make the article public after publishing",
+      "failedToPublish": "Publish failed: {error}",
+      "failedToRender": "Failed to render content",
+      "renderingContent": "Rendering content..."
+    }
+  },
+  "commands": {
+    "publishToHalo": "Publish to Halo",
+    "deleteFromHalo": "Delete from Halo",
+    "syncAll": "Sync All",
+    "openSettings": "Open Settings"
+  },
+  "menus": {
+    "publishToHalo": "Publish to Halo",
+    "deleteFromHalo": "Delete from Halo"
+  },
+  "notices": {
+    "siteNotConfigured": "Please configure a Halo site in settings first",
+    "connectionFailed": "Failed to connect to Halo server",
+    "published": "Published: {title}",
+    "updated": "Updated: {title}",
+    "deleted": "Deleted: {title}",
+    "syncCompleted": "Sync completed",
+    "syncingAll": "Syncing all files...",
+    "autoSyncNotEnabled": "Auto sync is not enabled",
+    "noteNotPublished": "This note is not published to Halo",
+    "siteNotFound": "Halo site not found",
+    "pleaseFillAllFields": "Please fill in all fields",
+    "failedToDelete": "Failed to delete: {error}"
+  },
+  "statusBar": {
+    "lastSync": "Last sync: {time}",
+    "syncing": "Syncing...",
+    "error": "Error: {message}"
+  }
+}
