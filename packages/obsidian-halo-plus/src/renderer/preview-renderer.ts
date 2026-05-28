@@ -1,9 +1,4 @@
-import {
-  App,
-  Component,
-  MarkdownRenderer,
-  TFile,
-} from 'obsidian';
+import { type App, type Component, MarkdownRenderer, type TFile } from 'obsidian';
 
 /**
  * 异步函数类型
@@ -103,11 +98,7 @@ export class PreviewRenderer {
    * 1. MarkdownRenderer.render() - 转换 Markdown 为 HTML
    * 2. MarkdownRenderer.postProcess() - 触发插件后处理器（Dataview、Tasks 等）
    */
-  private async renderHtml(
-    markdown: string,
-    file: TFile,
-    viewEl: HTMLDivElement,
-  ): Promise<void> {
+  private async renderHtml(markdown: string, file: TFile, viewEl: HTMLDivElement): Promise<void> {
     // 第一阶段：渲染 Markdown 到 fragment
     // 使用 fragment 技巧跳过自动 postProcess
     const fragment = {
@@ -119,13 +110,7 @@ export class PreviewRenderer {
     } as unknown as HTMLElement;
 
     try {
-      await MarkdownRenderer.render(
-        this.app,
-        markdown,
-        fragment,
-        file.path,
-        this.component,
-      );
+      await MarkdownRenderer.render(this.app, markdown, fragment, file.path, this.component);
     } catch {
       // 捕获我们故意抛出的错误
     }
@@ -133,9 +118,9 @@ export class PreviewRenderer {
     // 将捕获的节点移动到目标容器
     if (fragment.children) {
       const el = document.createDocumentFragment();
-      Array.from(fragment.children).forEach((node) => {
+      for (const node of Array.from(fragment.children)) {
         el.appendChild(node.cloneNode(true));
-      });
+      }
       viewEl.appendChild(el);
     }
 
@@ -162,10 +147,7 @@ export class PreviewRenderer {
   /**
    * 等待动态内容渲染完成
    */
-  private async waitForDynamicContent(
-    content: string,
-    containerEl: HTMLElement,
-  ): Promise<void> {
+  private async waitForDynamicContent(content: string, containerEl: HTMLElement): Promise<void> {
     // 检测是否包含需要额外等待的内容
     const hasDynamicContent =
       content.includes('```dataview') ||
@@ -230,9 +212,7 @@ export class PreviewRenderer {
    * 生成随机 ID
    */
   private generateDocId(length: number): string {
-    return Array.from({ length }, () =>
-      Math.floor(Math.random() * 16).toString(16),
-    ).join('');
+    return Array.from({ length }, () => Math.floor(Math.random() * 16).toString(16)).join('');
   }
 
   /**

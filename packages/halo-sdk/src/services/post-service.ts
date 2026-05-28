@@ -1,6 +1,13 @@
+import type { ContentUpdateParam, Post, PostRequest, PostSpec } from '@halo-dev/api-client';
 import type { HaloClient } from '../client';
-import type { Post, PostRequest, ContentUpdateParam, PostSpec } from '@halo-dev/api-client';
-import type { HaloPost, HaloContent, CreatePostParams, UpdatePostParams, ListPostsParams, PostPage } from '../types';
+import type {
+  CreatePostParams,
+  HaloContent,
+  HaloPost,
+  ListPostsParams,
+  PostPage,
+  UpdatePostParams,
+} from '../types';
 
 export class PostService {
   constructor(private readonly client: HaloClient) {}
@@ -97,7 +104,10 @@ export class PostService {
         visible: params.visible ?? existing.spec.visible,
         priority: params.priority ?? existing.spec.priority,
         excerpt: params.excerpt
-          ? { autoGenerate: params.excerpt.autoGenerate ?? existing.spec.excerpt.autoGenerate, raw: params.excerpt.raw ?? existing.spec.excerpt.raw }
+          ? {
+              autoGenerate: params.excerpt.autoGenerate ?? existing.spec.excerpt.autoGenerate,
+              raw: params.excerpt.raw ?? existing.spec.excerpt.raw,
+            }
           : existing.spec.excerpt,
         categories: params.categories ?? existing.spec.categories,
         tags: params.tags ?? existing.spec.tags,
@@ -105,7 +115,10 @@ export class PostService {
       },
     };
 
-    const response = await this.client.coreApi.content.post.updatePost({ name, post: postToUpdate });
+    const response = await this.client.coreApi.content.post.updatePost({
+      name,
+      post: postToUpdate,
+    });
     return response.data as unknown as HaloPost;
   }
 

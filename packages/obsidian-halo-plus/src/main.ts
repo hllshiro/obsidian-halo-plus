@@ -1,10 +1,10 @@
-import { App, Component, Plugin, PluginSettingTab, TFile, Notice, Menu, WorkspaceLeaf } from 'obsidian';
-import { HaloClient, PostService } from '@obsidian-halo-plus/halo-sdk';
-import { PreviewRenderer } from './renderer/preview-renderer';
-import { FrontMatterParser } from './content/frontmatter-parser';
+import { HaloClient, type HaloPost, PostService } from '@obsidian-halo-plus/halo-sdk';
+import { Component, Notice, Plugin, TFile } from 'obsidian';
+import { generateSlug, parseFrontMatter, stringifyFrontMatter } from './content/frontmatter-parser';
 import { ImageHandler } from './content/image-handler';
-import { SettingsTab } from './ui/settings-tab';
+import { PreviewRenderer } from './renderer/preview-renderer';
 import { PublishPreviewModal } from './ui/publish-preview-modal';
+import { SettingsTab } from './ui/settings-tab';
 
 // 插件设置接口
 export interface HaloSite {
@@ -62,7 +62,7 @@ export default class HaloPlusPlugin extends Plugin {
     this.addCommand({
       id: 'publish-to-halo',
       name: 'Publish to Halo',
-      editorCallback: async (editor, view) => {
+      editorCallback: async (_editor, view) => {
         const file = view.file;
         if (file) {
           await this.publishToHalo(file);
@@ -73,7 +73,7 @@ export default class HaloPlusPlugin extends Plugin {
     this.addCommand({
       id: 'delete-from-halo',
       name: 'Delete from Halo',
-      editorCallback: async (editor, view) => {
+      editorCallback: async (_editor, view) => {
         const file = view.file;
         if (file) {
           await this.deleteFromHalo(file);
@@ -105,14 +105,20 @@ export default class HaloPlusPlugin extends Plugin {
       this.app.workspace.on('file-menu', (menu, file) => {
         if (file instanceof TFile && file.extension === 'md') {
           menu.addItem((item) => {
-            item.setTitle('Publish to Halo').setIcon('upload').onClick(async () => {
-              await this.publishToHalo(file);
-            });
+            item
+              .setTitle('Publish to Halo')
+              .setIcon('upload')
+              .onClick(async () => {
+                await this.publishToHalo(file);
+              });
           });
           menu.addItem((item) => {
-            item.setTitle('Delete from Halo').setIcon('trash').onClick(async () => {
-              await this.deleteFromHalo(file);
-            });
+            item
+              .setTitle('Delete from Halo')
+              .setIcon('trash')
+              .onClick(async () => {
+                await this.deleteFromHalo(file);
+              });
           });
         }
       }),
@@ -126,8 +132,8 @@ export default class HaloPlusPlugin extends Plugin {
       this.app.vault.on('modify', async (file) => {
         if (file instanceof TFile && file.extension === 'md') {
           if (this.settings.autoSync.enabled) {
-            const isInSyncFolder = this.settings.autoSync.folders.some(
-              (folder) => file.path.startsWith(folder),
+            const isInSyncFolder = this.settings.autoSync.folders.some((folder) =>
+              file.path.startsWith(folder),
             );
             if (isInSyncFolder) {
               await this.autoSync(file);
@@ -159,7 +165,7 @@ export default class HaloPlusPlugin extends Plugin {
     }
 
     const content = await this.app.vault.read(file);
-    const frontmatter = FrontMatterParser.parse(content);
+    const frontmatter = parseFrontMatter(content);
 
     const modal = new PublishPreviewModal(this.app, file, this.settings, frontmatter);
     modal.setOnPublish(async (site, imageMode) => {
@@ -204,9 +210,9 @@ export default class HaloPlusPlugin extends Plugin {
         );
 
         const postService = new PostService(client);
-        let post;
+        let post: HaloPost | undefined;
         const effectiveTitle = (frontmatter.title as string) || file.basename;
-        const effectiveSlug = (frontmatter.slug as string) || FrontMatterParser.generateSlug(effectiveTitle);
+        const effectiveSlug = (frontmatter.slug as string) || generateSlug(effectiveTitle);
 
         if (frontmatter.halo?.name) {
           post = await postService.update(frontmatter.halo.name as string, {
@@ -270,7 +276,7 @@ export default class HaloPlusPlugin extends Plugin {
    */
   async deleteFromHalo(file: TFile): Promise<void> {
     const content = await this.app.vault.read(file);
-    const frontmatter = FrontMatterParser.parse(content);
+    const frontmatter = parseFrontMatter(content);
 
     if (!frontmatter.halo?.name) {
       new Notice('This note is not published to Halo');
@@ -369,7 +375,7 @@ export default class HaloPlusPlugin extends Plugin {
    */
   private async updateFrontMatter(file: TFile, updates: Record<string, unknown>): Promise<void> {
     const content = await this.app.vault.read(file);
-    const frontmatter = FrontMatterParser.parse(content);
+    const frontmatter = parseFrontMatter(content);
 
     const newFrontmatter = {
       ...frontmatter,
@@ -378,7 +384,7 @@ export default class HaloPlusPlugin extends Plugin {
     };
 
     // 重新构建文件内容
-    const newContent = FrontMatterParser.stringify(content, newFrontmatter);
+    const newContent = stringifyFrontMatter(content, newFrontmatter);
     await this.app.vault.modify(file, newContent);
   }
 }

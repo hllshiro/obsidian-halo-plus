@@ -1,4 +1,4 @@
-import { App, Modal } from 'obsidian';
+import { type App, Modal } from 'obsidian';
 
 /**
  * 发布确认弹窗
@@ -67,7 +67,8 @@ export class PublishModal extends Modal {
     const previewEl = contentEl.createDiv({ cls: 'publish-modal-preview' });
     previewEl.createEl('h3', { text: 'Content Preview' });
     const previewContent = previewEl.createDiv({ cls: 'publish-modal-preview-content' });
-    previewContent.innerHTML = this.content.substring(0, 500) + (this.content.length > 500 ? '...' : '');
+    previewContent.innerHTML =
+      this.content.substring(0, 500) + (this.content.length > 500 ? '...' : '');
 
     // 图片处理模式
     const imageModeEl = contentEl.createDiv({ cls: 'publish-modal-image-mode' });

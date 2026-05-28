@@ -1,5 +1,5 @@
 import type { HaloClient } from '../client';
-import type { HaloTag, CreateTagParams, ListTagsParams, TagPage } from '../types';
+import type { CreateTagParams, HaloTag, ListTagsParams, TagPage } from '../types';
 
 /**
  * Halo Tag 服务

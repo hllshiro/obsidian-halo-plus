@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
+import { HaloClient } from '@obsidian-halo-plus/halo-sdk';
 import { Command } from 'commander';
 import { config } from 'dotenv';
-import { HaloClient } from '@obsidian-halo-plus/halo-sdk';
 
 // 加载环境变量
 config();
@@ -28,9 +28,7 @@ function getClient(): HaloClient {
 }
 
 // Post 命令
-const postCmd = program
-  .command('post')
-  .description('Manage posts');
+const postCmd = program.command('post').description('Manage posts');
 
 postCmd
   .command('list')
@@ -41,8 +39,8 @@ postCmd
     const client = getClient();
     const posts = client.posts;
     const result = await posts.list({
-      page: parseInt(options.page),
-      size: parseInt(options.size),
+      page: Number.parseInt(options.page),
+      size: Number.parseInt(options.size),
     });
 
     console.log(`Posts (Page ${result.page}/${result.totalPages}, Total: ${result.total})`);
@@ -98,9 +96,7 @@ postCmd
   });
 
 // Tag 命令
-const tagCmd = program
-  .command('tag')
-  .description('Manage tags');
+const tagCmd = program.command('tag').description('Manage tags');
 
 tagCmd
   .command('list')
@@ -128,9 +124,7 @@ tagCmd
   });
 
 // Category 命令
-const categoryCmd = program
-  .command('category')
-  .description('Manage categories');
+const categoryCmd = program.command('category').description('Manage categories');
 
 categoryCmd
   .command('list')

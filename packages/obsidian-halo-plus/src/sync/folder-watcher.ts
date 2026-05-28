@@ -1,4 +1,4 @@
-import { App, TFile, Vault } from 'obsidian';
+import { type App, TFile } from 'obsidian';
 
 /**
  * 文件夹监听器
@@ -10,10 +10,7 @@ export class FolderWatcher {
   private onFileModified: (file: TFile) => void;
   private eventRef: unknown = null;
 
-  constructor(
-    app: App,
-    onFileModified: (file: TFile) => void,
-  ) {
+  constructor(app: App, onFileModified: (file: TFile) => void) {
     this.app = app;
     this.onFileModified = onFileModified;
   }

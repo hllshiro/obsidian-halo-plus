@@ -1,5 +1,10 @@
 import type { HaloClient } from '../client';
-import type { HaloAttachment, UploadAttachmentParams, ListAttachmentsParams, AttachmentPage } from '../types';
+import type {
+  AttachmentPage,
+  HaloAttachment,
+  ListAttachmentsParams,
+  UploadAttachmentParams,
+} from '../types';
 
 export class AttachmentService {
   constructor(private readonly client: HaloClient) {}

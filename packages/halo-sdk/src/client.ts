@@ -1,7 +1,10 @@
-import axios, { AxiosInstance, AxiosError } from 'axios';
-import { createConsoleApiClient, createCoreApiClient, createPublicApiClient } from '@halo-dev/api-client';
+import {
+  createConsoleApiClient,
+  createCoreApiClient,
+  createPublicApiClient,
+} from '@halo-dev/api-client';
+import axios, { type AxiosInstance, AxiosError } from 'axios';
 import type { HaloClientConfig, HaloClientOptions, HaloError } from './types';
-import type { PostV1alpha1ConsoleApi, PostV1alpha1Api, PostV1alpha1PublicApi } from '@halo-dev/api-client';
 
 export class HaloClient {
   private readonly axiosInstance: AxiosInstance;
@@ -55,8 +58,7 @@ export class HaloClient {
   private handleError(error: unknown): HaloError {
     if (error instanceof AxiosError) {
       const status = error.response?.status ?? 500;
-      const message =
-        (error.response?.data as { message?: string })?.message ?? error.message;
+      const message = (error.response?.data as { message?: string })?.message ?? error.message;
       const detail = error.response?.data;
       return { status, message, detail };
     }

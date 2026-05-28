@@ -1,9 +1,13 @@
-import { App, Component, TFile } from 'obsidian';
-import { HaloClient, PostService } from '@obsidian-halo-plus/halo-sdk';
-import type HaloPlusPlugin from '../main';
-import { FrontMatterParser } from '../content/frontmatter-parser';
-import { PreviewRenderer } from '../renderer/preview-renderer';
+import { HaloClient, type HaloPost, PostService } from '@obsidian-halo-plus/halo-sdk';
+import { type App, Component, type TFile } from 'obsidian';
+import {
+  generateSlug,
+  parseFrontMatter,
+  stringifyFrontMatter,
+} from '../content/frontmatter-parser';
 import { ImageHandler } from '../content/image-handler';
+import type HaloPlusPlugin from '../main';
+import { PreviewRenderer } from '../renderer/preview-renderer';
 
 export class SyncManager {
   private app: App;
@@ -40,7 +44,7 @@ export class SyncManager {
       }
 
       const content = await this.app.vault.read(file);
-      const frontmatter = FrontMatterParser.parse(content);
+      const frontmatter = parseFrontMatter(content);
 
       const component = new Component();
       component.load();
@@ -60,9 +64,9 @@ export class SyncManager {
         );
 
         const postService = new PostService(client);
-        let post;
+        let post: HaloPost | undefined;
         const effectiveTitle = frontmatter.title || file.basename;
-        const effectiveSlug = frontmatter.slug || FrontMatterParser.generateSlug(effectiveTitle);
+        const effectiveSlug = frontmatter.slug || generateSlug(effectiveTitle);
 
         if (frontmatter.halo?.name) {
           post = await postService.update(frontmatter.halo.name, {
@@ -147,7 +151,7 @@ export class SyncManager {
 
   private async updateFrontMatter(file: TFile, updates: Record<string, unknown>): Promise<void> {
     const content = await this.app.vault.read(file);
-    const frontmatter = FrontMatterParser.parse(content);
+    const frontmatter = parseFrontMatter(content);
 
     const newFrontmatter = {
       ...frontmatter,
@@ -155,7 +159,7 @@ export class SyncManager {
       halo: updates.halo === undefined ? frontmatter.halo : updates.halo,
     };
 
-    const newContent = FrontMatterParser.stringify(content, newFrontmatter);
+    const newContent = stringifyFrontMatter(content, newFrontmatter);
     await this.app.vault.modify(file, newContent);
   }
 }

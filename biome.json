@@ -39,7 +39,9 @@
       "coverage",
       "*.js",
       "*.mjs",
-      "*.d.ts"
+      "*.d.ts",
+      "reference",
+      ".omo"
     ]
   }
 }

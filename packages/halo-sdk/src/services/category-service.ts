@@ -1,5 +1,10 @@
 import type { HaloClient } from '../client';
-import type { HaloCategory, CreateCategoryParams, ListCategoriesParams, CategoryPage } from '../types';
+import type {
+  CategoryPage,
+  CreateCategoryParams,
+  HaloCategory,
+  ListCategoriesParams,
+} from '../types';
 
 /**
  * Halo Category 服务

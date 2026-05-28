@@ -1,4 +1,4 @@
-import { App, TFile } from 'obsidian';
+import { type App, TFile } from 'obsidian';
 
 /**
  * 图片处理器
@@ -117,7 +117,7 @@ export class ImageHandler {
   private async imageToBase64(
     buffer: ArrayBuffer,
     mimeType: string,
-    quality: number,
+    _quality: number,
   ): Promise<string> {
     // 在浏览器环境中，使用 FileReader
     if (typeof FileReader !== 'undefined') {

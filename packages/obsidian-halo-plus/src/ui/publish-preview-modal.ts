@@ -1,9 +1,6 @@
-import { App, Component, Modal, Notice, Setting, TFile } from 'obsidian';
-import { HaloClient, PostService } from '@obsidian-halo-plus/halo-sdk';
-import { PreviewRenderer, type RenderResult } from '../renderer/preview-renderer';
-import { FrontMatterParser } from '../content/frontmatter-parser';
-import { ImageHandler } from '../content/image-handler';
+import { type App, Component, Modal, Notice, Setting, type TFile } from 'obsidian';
 import type { HaloSite, PluginSettings } from '../main';
+import { PreviewRenderer, type RenderResult } from '../renderer/preview-renderer';
 
 /**
  * 发布预览 Modal 回调
@@ -48,8 +45,7 @@ export class PublishPreviewModal extends Modal {
     this.component = new Component();
 
     // 默认选中默认站点
-    this.selectedSite =
-      settings.sites.find((s) => s.isDefault) || settings.sites[0];
+    this.selectedSite = settings.sites.find((s) => s.isDefault) || settings.sites[0];
     this.imageMode = settings.imageHandling.defaultMode;
   }
 
@@ -148,9 +144,9 @@ export class PublishPreviewModal extends Modal {
       const tagsEl = infoSection.createDiv({ cls: 'halo-plus-info-item' });
       tagsEl.createEl('span', { text: 'Tags: ', cls: 'halo-plus-info-label' });
       const tagsContainer = tagsEl.createDiv({ cls: 'halo-plus-tags' });
-      tags.forEach((tag) => {
+      for (const tag of tags) {
         tagsContainer.createEl('span', { text: tag, cls: 'halo-plus-tag' });
-      });
+      }
     }
 
     // 分类
@@ -164,12 +160,12 @@ export class PublishPreviewModal extends Modal {
       const categoriesContainer = categoriesEl.createDiv({
         cls: 'halo-plus-categories',
       });
-      categories.forEach((cat) => {
+      for (const cat of categories) {
         categoriesContainer.createEl('span', {
           text: cat,
           cls: 'halo-plus-category',
         });
-      });
+      }
     }
 
     // 分割线
@@ -184,13 +180,13 @@ export class PublishPreviewModal extends Modal {
       .setName('Halo Site')
       .setDesc('Select the Halo site to publish to')
       .addDropdown((dropdown) => {
-        this.settings.sites.forEach((site, index) => {
+        for (const [index, site] of this.settings.sites.entries()) {
           dropdown.addOption(index.toString(), site.name);
-        });
+        }
         const defaultIndex = this.settings.sites.indexOf(this.selectedSite);
         dropdown.setValue(defaultIndex.toString());
         dropdown.onChange((value) => {
-          this.selectedSite = this.settings.sites[parseInt(value)];
+          this.selectedSite = this.settings.sites[Number.parseInt(value)];
         });
       });
 

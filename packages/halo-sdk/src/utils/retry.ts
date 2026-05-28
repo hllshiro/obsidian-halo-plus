@@ -51,7 +51,7 @@ export async function withRetry<T>(
       }
 
       // 等待后重试（指数退避）
-      await delay(opts.delay * Math.pow(opts.backoff, attempt));
+      await delay(opts.delay * opts.backoff ** attempt);
     }
   }
 

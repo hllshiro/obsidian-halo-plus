@@ -5,9 +5,7 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "scripts": {
     "build": "esbuild src/index.ts --bundle --platform=node --format=cjs --outfile=dist/index.js --external:@halo-dev/api-client --external:axios && esbuild src/index.ts --bundle --platform=node --format=esm --outfile=dist/index.mjs --external:@halo-dev/api-client --external:axios",
     "dev": "esbuild src/index.ts --bundle --platform=node --format=cjs --outfile=dist/index.js --external:@halo-dev/api-client --external:axios --watch",

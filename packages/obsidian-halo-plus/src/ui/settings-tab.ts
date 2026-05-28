@@ -1,4 +1,4 @@
-import { App, Modal, PluginSettingTab, Setting, Notice } from 'obsidian';
+import { type App, Modal, Notice, PluginSettingTab, Setting } from 'obsidian';
 import type HaloPlusPlugin from '../main';
 
 /**
@@ -143,46 +143,40 @@ export class SettingsTab extends PluginSettingTab {
       .setName('Enable auto sync')
       .setDesc('Automatically publish notes when saved')
       .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.autoSync.enabled)
-          .onChange(async (value) => {
-            this.plugin.settings.autoSync.enabled = value;
-            await this.plugin.saveSettings();
-            this.display();
-          }),
+        toggle.setValue(this.plugin.settings.autoSync.enabled).onChange(async (value) => {
+          this.plugin.settings.autoSync.enabled = value;
+          await this.plugin.saveSettings();
+          this.display();
+        }),
       );
 
     if (this.plugin.settings.autoSync.enabled) {
       const folders = this.plugin.settings.autoSync.folders;
 
       folders.forEach((folder, index) => {
-        new Setting(containerEl)
-          .setName(folder)
-          .addButton((btn) =>
-            btn
-              .setButtonText('Remove')
-              .setWarning()
-              .onClick(async () => {
-                this.plugin.settings.autoSync.folders.splice(index, 1);
-                await this.plugin.saveSettings();
-                this.display();
-              }),
-          );
+        new Setting(containerEl).setName(folder).addButton((btn) =>
+          btn
+            .setButtonText('Remove')
+            .setWarning()
+            .onClick(async () => {
+              this.plugin.settings.autoSync.folders.splice(index, 1);
+              await this.plugin.saveSettings();
+              this.display();
+            }),
+        );
       });
 
       new Setting(containerEl)
         .setName('Add folder')
         .setDesc('Add a folder to sync')
         .addText((text) =>
-          text
-            .setPlaceholder('folder/path')
-            .onChange(async (value) => {
-              if (value && !folders.includes(value)) {
-                this.plugin.settings.autoSync.folders.push(value);
-                await this.plugin.saveSettings();
-                this.display();
-              }
-            }),
+          text.setPlaceholder('folder/path').onChange(async (value) => {
+            if (value && !folders.includes(value)) {
+              this.plugin.settings.autoSync.folders.push(value);
+              await this.plugin.saveSettings();
+              this.display();
+            }
+          }),
         );
     }
   }
@@ -198,11 +192,15 @@ export class SettingsTab extends PluginSettingTab {
 
   private editSite(index: number): void {
     const site = this.plugin.settings.sites[index];
-    const modal = new SiteModal(this.app, async (updatedSite) => {
-      this.plugin.settings.sites[index] = updatedSite;
-      await this.plugin.saveSettings();
-      this.display();
-    }, site);
+    const modal = new SiteModal(
+      this.app,
+      async (updatedSite) => {
+        this.plugin.settings.sites[index] = updatedSite;
+        await this.plugin.saveSettings();
+        this.display();
+      },
+      site,
+    );
     modal.open();
   }
 }
@@ -212,17 +210,11 @@ class SiteModal extends Modal {
   private site?: HaloSite;
   private data: HaloSite;
 
-  constructor(
-    app: App,
-    onSubmit: (site: HaloSite) => void,
-    site?: HaloSite,
-  ) {
+  constructor(app: App, onSubmit: (site: HaloSite) => void, site?: HaloSite) {
     super(app);
     this.onSubmit = onSubmit;
     this.site = site;
-    this.data = site
-      ? { ...site }
-      : { name: '', url: '', token: '', isDefault: false };
+    this.data = site ? { ...site } : { name: '', url: '', token: '', isDefault: false };
   }
 
   onOpen(): void {
@@ -231,57 +223,45 @@ class SiteModal extends Modal {
 
     contentEl.createEl('h2', { text: this.site ? 'Edit Site' : 'Add Site' });
 
-    new Setting(contentEl)
-      .setName('Site Name')
-      .addText((text) =>
-        text
-          .setPlaceholder('My Blog')
-          .setValue(this.data.name)
-          .onChange((value) => {
-            this.data.name = value;
-          }),
-      );
+    new Setting(contentEl).setName('Site Name').addText((text) =>
+      text
+        .setPlaceholder('My Blog')
+        .setValue(this.data.name)
+        .onChange((value) => {
+          this.data.name = value;
+        }),
+    );
 
-    new Setting(contentEl)
-      .setName('Site URL')
-      .addText((text) =>
-        text
-          .setPlaceholder('https://halo.example.com')
-          .setValue(this.data.url)
-          .onChange((value) => {
-            this.data.url = value;
-          }),
-      );
+    new Setting(contentEl).setName('Site URL').addText((text) =>
+      text
+        .setPlaceholder('https://halo.example.com')
+        .setValue(this.data.url)
+        .onChange((value) => {
+          this.data.url = value;
+        }),
+    );
 
-    new Setting(contentEl)
-      .setName('API Token')
-      .addText((text) => {
-        text
-          .setPlaceholder('pat_xxxxxxxx')
-          .setValue(this.data.token)
-          .onChange((value) => {
-            this.data.token = value;
-          });
-        text.inputEl.type = 'password';
-      });
+    new Setting(contentEl).setName('API Token').addText((text) => {
+      text
+        .setPlaceholder('pat_xxxxxxxx')
+        .setValue(this.data.token)
+        .onChange((value) => {
+          this.data.token = value;
+        });
+      text.inputEl.type = 'password';
+    });
 
-    new Setting(contentEl)
-      .setName('Default Site')
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.data.isDefault)
-          .onChange((value) => {
-            this.data.isDefault = value;
-          }),
-      );
+    new Setting(contentEl).setName('Default Site').addToggle((toggle) =>
+      toggle.setValue(this.data.isDefault).onChange((value) => {
+        this.data.isDefault = value;
+      }),
+    );
 
     new Setting(contentEl)
       .addButton((btn) =>
-        btn
-          .setButtonText('Cancel')
-          .onClick(() => {
-            this.close();
-          }),
+        btn.setButtonText('Cancel').onClick(() => {
+          this.close();
+        }),
       )
       .addButton((btn) =>
         btn

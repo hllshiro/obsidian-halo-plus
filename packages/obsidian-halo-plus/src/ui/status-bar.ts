@@ -1,4 +1,4 @@
-import { App, StatusBar as ObsidianStatusBar, Plugin } from 'obsidian';
+import type { App, StatusBar as ObsidianStatusBar, Plugin } from 'obsidian';
 
 /**
  * 状态栏指示器
