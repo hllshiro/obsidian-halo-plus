@@ -228,7 +228,7 @@ class SiteModal extends Modal {
         : t('settings.siteManagement.addSite'),
     });
 
-    new Setting(contentEl).setName('Site Name').addText((text) =>
+    new Setting(contentEl).setName(t('settings.siteManagement.siteName')).addText((text) =>
       text
         .setPlaceholder('My Blog')
         .setValue(this.data.name)
@@ -237,7 +237,7 @@ class SiteModal extends Modal {
         }),
     );
 
-    new Setting(contentEl).setName('Site URL').addText((text) =>
+    new Setting(contentEl).setName(t('settings.siteManagement.siteURL')).addText((text) =>
       text
         .setPlaceholder('https://halo.example.com')
         .setValue(this.data.url)
@@ -246,7 +246,7 @@ class SiteModal extends Modal {
         }),
     );
 
-    new Setting(contentEl).setName('API Token').addText((text) => {
+    new Setting(contentEl).setName(t('settings.siteManagement.apiToken')).addText((text) => {
       text
         .setPlaceholder('pat_xxxxxxxx')
         .setValue(this.data.token)
@@ -256,7 +256,7 @@ class SiteModal extends Modal {
       text.inputEl.type = 'password';
     });
 
-    new Setting(contentEl).setName('Default Site').addToggle((toggle) =>
+    new Setting(contentEl).setName(t('settings.siteManagement.defaultSite')).addToggle((toggle) =>
       toggle.setValue(this.data.isDefault).onChange((value) => {
         this.data.isDefault = value;
       }),
@@ -270,7 +270,7 @@ class SiteModal extends Modal {
       )
       .addButton((btn) =>
         btn
-          .setButtonText('Save')
+          .setButtonText(t('settings.siteManagement.save'))
           .setCta()
           .onClick(() => {
             if (this.data.name && this.data.url && this.data.token) {
