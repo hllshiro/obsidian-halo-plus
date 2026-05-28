@@ -1,4 +1,5 @@
 import { type App, Modal, Notice, PluginSettingTab, Setting } from 'obsidian';
+import { t } from '../i18n';
 import type HaloPlusPlugin from '../main';
 
 /**
@@ -16,7 +17,7 @@ export class SettingsTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    containerEl.createEl('h2', { text: 'Halo Plus Settings' });
+    containerEl.createEl('h2', { text: t('settings.title') });
 
     // 站点管理
     this.renderSiteManagement(containerEl);
@@ -32,7 +33,7 @@ export class SettingsTab extends PluginSettingTab {
   }
 
   private renderSiteManagement(containerEl: HTMLElement): void {
-    containerEl.createEl('h3', { text: 'Site Management' });
+    containerEl.createEl('h3', { text: t('settings.siteManagement.title') });
 
     const sites = this.plugin.getSites();
 
@@ -44,7 +45,7 @@ export class SettingsTab extends PluginSettingTab {
         .setDesc(site.url)
         .addButton((btn) =>
           btn
-            .setButtonText('Edit')
+            .setButtonText(t('settings.siteManagement.editSite'))
             .setCta()
             .onClick(() => {
               this.editSite(index);
@@ -52,7 +53,7 @@ export class SettingsTab extends PluginSettingTab {
         )
         .addButton((btn) =>
           btn
-            .setButtonText('Delete')
+            .setButtonText(t('settings.siteManagement.deleteSite'))
             .setWarning()
             .onClick(async () => {
               this.plugin.settings.sites.splice(index, 1);
@@ -63,11 +64,11 @@ export class SettingsTab extends PluginSettingTab {
     });
 
     new Setting(containerEl)
-      .setName('Add Site')
-      .setDesc('Add a new Halo site')
+      .setName(t('settings.siteManagement.addSite'))
+      .setDesc(t('settings.siteManagement.addSite'))
       .addButton((btn) =>
         btn
-          .setButtonText('Add Site')
+          .setButtonText(t('settings.siteManagement.addSite'))
           .setCta()
           .onClick(() => {
             this.addSite();
@@ -76,11 +77,11 @@ export class SettingsTab extends PluginSettingTab {
   }
 
   private renderPublishBehavior(containerEl: HTMLElement): void {
-    containerEl.createEl('h3', { text: 'Publish Behavior' });
+    containerEl.createEl('h3', { text: t('settings.publishBehavior.title') });
 
     new Setting(containerEl)
-      .setName('Publish by default')
-      .setDesc('Automatically publish after creating/updating')
+      .setName(t('settings.publishBehavior.publishByDefault'))
+      .setDesc(t('settings.publishBehavior.publishByDefaultDesc'))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.publishBehavior.publishByDefault)
@@ -91,8 +92,8 @@ export class SettingsTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName('Skip preview')
-      .setDesc('Skip preview modal and publish directly')
+      .setName(t('settings.publishBehavior.skipPreview'))
+      .setDesc(t('settings.publishBehavior.skipPreviewDesc'))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.publishBehavior.skipPreview)
@@ -104,15 +105,15 @@ export class SettingsTab extends PluginSettingTab {
   }
 
   private renderImageHandling(containerEl: HTMLElement): void {
-    containerEl.createEl('h3', { text: 'Image Handling' });
+    containerEl.createEl('h3', { text: t('settings.imageHandling.title') });
 
     new Setting(containerEl)
-      .setName('Default mode')
-      .setDesc('How to handle images in notes')
+      .setName(t('settings.imageHandling.defaultMode'))
+      .setDesc(t('settings.imageHandling.defaultModeDesc'))
       .addDropdown((dropdown) =>
         dropdown
-          .addOption('upload', 'Upload to Halo')
-          .addOption('base64', 'Embed as Base64')
+          .addOption('upload', t('settings.imageHandling.uploadToHalo'))
+          .addOption('base64', t('settings.imageHandling.embedAsBase64'))
           .setValue(this.plugin.settings.imageHandling.defaultMode)
           .onChange(async (value: 'upload' | 'base64') => {
             this.plugin.settings.imageHandling.defaultMode = value;
@@ -122,8 +123,8 @@ export class SettingsTab extends PluginSettingTab {
 
     if (this.plugin.settings.imageHandling.defaultMode === 'base64') {
       new Setting(containerEl)
-        .setName('Base64 quality')
-        .setDesc('Compression quality (0-100)')
+        .setName(t('settings.imageHandling.base64Quality'))
+        .setDesc(t('settings.imageHandling.base64QualityDesc'))
         .addSlider((slider) =>
           slider
             .setLimits(0, 100, 5)
@@ -137,11 +138,11 @@ export class SettingsTab extends PluginSettingTab {
   }
 
   private renderAutoSync(containerEl: HTMLElement): void {
-    containerEl.createEl('h3', { text: 'Auto Sync' });
+    containerEl.createEl('h3', { text: t('settings.autoSync.title') });
 
     new Setting(containerEl)
-      .setName('Enable auto sync')
-      .setDesc('Automatically publish notes when saved')
+      .setName(t('settings.autoSync.enableAutoSync'))
+      .setDesc(t('settings.autoSync.enableAutoSyncDesc'))
       .addToggle((toggle) =>
         toggle.setValue(this.plugin.settings.autoSync.enabled).onChange(async (value) => {
           this.plugin.settings.autoSync.enabled = value;
@@ -156,7 +157,7 @@ export class SettingsTab extends PluginSettingTab {
       folders.forEach((folder, index) => {
         new Setting(containerEl).setName(folder).addButton((btn) =>
           btn
-            .setButtonText('Remove')
+            .setButtonText(t('settings.autoSync.remove'))
             .setWarning()
             .onClick(async () => {
               this.plugin.settings.autoSync.folders.splice(index, 1);
@@ -167,8 +168,8 @@ export class SettingsTab extends PluginSettingTab {
       });
 
       new Setting(containerEl)
-        .setName('Add folder')
-        .setDesc('Add a folder to sync')
+        .setName(t('settings.autoSync.addFolder'))
+        .setDesc(t('settings.autoSync.addFolderDesc'))
         .addText((text) =>
           text.setPlaceholder('folder/path').onChange(async (value) => {
             if (value && !folders.includes(value)) {
@@ -221,7 +222,11 @@ class SiteModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
 
-    contentEl.createEl('h2', { text: this.site ? 'Edit Site' : 'Add Site' });
+    contentEl.createEl('h2', {
+      text: this.site
+        ? t('settings.siteManagement.editSite')
+        : t('settings.siteManagement.addSite'),
+    });
 
     new Setting(contentEl).setName('Site Name').addText((text) =>
       text
@@ -259,7 +264,7 @@ class SiteModal extends Modal {
 
     new Setting(contentEl)
       .addButton((btn) =>
-        btn.setButtonText('Cancel').onClick(() => {
+        btn.setButtonText(t('modals.publish.cancel')).onClick(() => {
           this.close();
         }),
       )
@@ -272,7 +277,7 @@ class SiteModal extends Modal {
               this.onSubmit(this.data);
               this.close();
             } else {
-              new Notice('Please fill in all fields');
+              new Notice(t('notices.pleaseFillAllFields'));
             }
           }),
       );

@@ -1,4 +1,5 @@
 import { type App, Component, Modal, Notice, Setting, type TFile } from 'obsidian';
+import { t } from '../i18n';
 import type { HaloSite, PluginSettings } from '../main';
 import { PreviewRenderer, type RenderResult } from '../renderer/preview-renderer';
 
@@ -62,7 +63,7 @@ export class PublishPreviewModal extends Modal {
 
     // 设置 Modal 宽度（参考 obsidian-better-export-pdf）
     this.containerEl.style.setProperty('--dialog-width', '90vw');
-    this.titleEl.setText('Publish to Halo');
+    this.titleEl.setText(t('modals.publish.title'));
 
     // 主容器 - 双栏布局
     const mainEl = contentEl.createDiv({ cls: 'halo-plus-preview-container' });
@@ -93,7 +94,7 @@ export class PublishPreviewModal extends Modal {
     // 加载状态
     const loadingEl = container.createDiv({ cls: 'halo-plus-preview-loading' });
     loadingEl.createEl('span', { cls: 'spinner' });
-    loadingEl.createSpan({ text: 'Rendering content...' });
+    loadingEl.createSpan({ text: t('modals.publish.renderingContent') });
 
     try {
       // 加载组件
@@ -117,7 +118,7 @@ export class PublishPreviewModal extends Modal {
     } catch (error) {
       loadingEl.remove();
       const errorEl = container.createDiv({ cls: 'halo-plus-preview-error' });
-      errorEl.createEl('p', { text: 'Failed to render content' });
+      errorEl.createEl('p', { text: t('modals.publish.failedToRender') });
       errorEl.createEl('pre', {
         text: error instanceof Error ? error.message : String(error),
       });
