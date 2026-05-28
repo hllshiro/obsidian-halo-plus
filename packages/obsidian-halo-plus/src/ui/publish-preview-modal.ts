@@ -131,19 +131,19 @@ export class PublishPreviewModal extends Modal {
   private renderSidebar(container: HTMLElement): void {
     // 文章信息区域
     const infoSection = container.createDiv({ cls: 'halo-plus-sidebar-section' });
-    infoSection.createEl('h3', { text: 'Article Info' });
+    infoSection.createEl('h3', { text: t('modals.publish.articleInfo') });
 
     // 标题
     const title = (this.frontmatter.title as string) || this.file.basename;
     const titleEl = infoSection.createDiv({ cls: 'halo-plus-info-item' });
-    titleEl.createEl('span', { text: 'Title: ', cls: 'halo-plus-info-label' });
+    titleEl.createEl('span', { text: t('modals.publish.titleLabel'), cls: 'halo-plus-info-label' });
     titleEl.createEl('span', { text: title, cls: 'halo-plus-info-value' });
 
     // 标签
     const tags = (this.frontmatter.tags as string[]) || [];
     if (tags.length > 0) {
       const tagsEl = infoSection.createDiv({ cls: 'halo-plus-info-item' });
-      tagsEl.createEl('span', { text: 'Tags: ', cls: 'halo-plus-info-label' });
+      tagsEl.createEl('span', { text: t('modals.publish.tags'), cls: 'halo-plus-info-label' });
       const tagsContainer = tagsEl.createDiv({ cls: 'halo-plus-tags' });
       for (const tag of tags) {
         tagsContainer.createEl('span', { text: tag, cls: 'halo-plus-tag' });
@@ -155,7 +155,7 @@ export class PublishPreviewModal extends Modal {
     if (categories.length > 0) {
       const categoriesEl = infoSection.createDiv({ cls: 'halo-plus-info-item' });
       categoriesEl.createEl('span', {
-        text: 'Categories: ',
+        text: t('modals.publish.categories'),
         cls: 'halo-plus-info-label',
       });
       const categoriesContainer = categoriesEl.createDiv({
@@ -174,12 +174,12 @@ export class PublishPreviewModal extends Modal {
 
     // 站点选择区域
     const siteSection = container.createDiv({ cls: 'halo-plus-sidebar-section' });
-    siteSection.createEl('h3', { text: 'Target Site' });
+    siteSection.createEl('h3', { text: t('modals.publish.targetSite') });
 
     // 站点选择下拉框
     new Setting(siteSection)
-      .setName('Halo Site')
-      .setDesc('Select the Halo site to publish to')
+      .setName(t('modals.publish.selectSite'))
+      .setDesc(t('modals.publish.selectSiteDesc'))
       .addDropdown((dropdown) => {
         for (const [index, site] of this.settings.sites.entries()) {
           dropdown.addOption(index.toString(), site.name);
@@ -193,11 +193,11 @@ export class PublishPreviewModal extends Modal {
 
     // 图片处理模式
     new Setting(siteSection)
-      .setName('Image Handling')
-      .setDesc('How to handle images in the content')
+      .setName(t('modals.publish.imageHandling'))
+      .setDesc(t('modals.publish.imageHandlingDesc'))
       .addDropdown((dropdown) => {
-        dropdown.addOption('upload', 'Upload to Halo');
-        dropdown.addOption('base64', 'Embed as Base64');
+        dropdown.addOption('upload', t('settings.imageHandling.uploadToHalo'));
+        dropdown.addOption('base64', t('settings.imageHandling.embedAsBase64'));
         dropdown.setValue(this.imageMode);
         dropdown.onChange((value) => {
           this.imageMode = value as 'upload' | 'base64';
@@ -209,13 +209,13 @@ export class PublishPreviewModal extends Modal {
 
     // 发布选项区域
     const optionsSection = container.createDiv({ cls: 'halo-plus-sidebar-section' });
-    optionsSection.createEl('h3', { text: 'Publish Options' });
+    optionsSection.createEl('h3', { text: t('modals.publish.publishOptions') });
 
     // 是否立即发布
     let publishImmediately = this.settings.publishBehavior.publishByDefault;
     new Setting(optionsSection)
-      .setName('Publish Immediately')
-      .setDesc('Make the article public after publishing')
+      .setName(t('modals.publish.publishImmediately'))
+      .setDesc(t('modals.publish.publishImmediatelyDesc'))
       .addToggle((toggle) => {
         toggle.setValue(publishImmediately);
         toggle.onChange((value) => {
@@ -231,7 +231,7 @@ export class PublishPreviewModal extends Modal {
 
     // 取消按钮
     const cancelBtn = buttonSection.createEl('button', {
-      text: 'Cancel',
+      text: t('modals.publish.cancel'),
       cls: 'halo-plus-btn halo-plus-btn-cancel',
     });
     cancelBtn.addEventListener('click', () => {
@@ -240,14 +240,14 @@ export class PublishPreviewModal extends Modal {
 
     // 发布按钮
     const publishBtn = buttonSection.createEl('button', {
-      text: 'Publish',
+      text: t('modals.publish.publish'),
       cls: 'halo-plus-btn halo-plus-btn-publish mod-cta',
     });
     publishBtn.addEventListener('click', async () => {
       if (this.isPublishing) return;
 
       this.isPublishing = true;
-      publishBtn.setText('Publishing...');
+      publishBtn.setText(t('modals.publish.publishing'));
       publishBtn.disabled = true;
 
       try {
@@ -256,10 +256,14 @@ export class PublishPreviewModal extends Modal {
         }
         this.close();
       } catch (error) {
-        new Notice(`Publish failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        new Notice(
+          t('modals.publish.failedToPublish', {
+            error: error instanceof Error ? error.message : 'Unknown error',
+          }),
+        );
       } finally {
         this.isPublishing = false;
-        publishBtn.setText('Publish');
+        publishBtn.setText(t('modals.publish.publish'));
         publishBtn.disabled = false;
       }
     });
