@@ -52,6 +52,10 @@ export class ImageHandler {
 
     const errors: Array<{ src: string; error: unknown }> = [];
     let uploadedCount = 0;
+
+    // 去重：记录已上传的文件路径和对应的 permalink
+    const uploadedMap = new Map<string, string>();
+
     for (const img of localImages) {
       const src = img.getAttribute('src');
       if (!src) continue;
@@ -60,6 +64,16 @@ export class ImageHandler {
         // 解析图片路径
         const localPath = await this.resolveImagePath(src, currentFile);
         if (!localPath) continue;
+
+        // 检查是否已上传过
+        if (uploadedMap.has(localPath)) {
+          const permalink = uploadedMap.get(localPath);
+          if (permalink) {
+            img.setAttribute('src', permalink);
+            console.log(`[ImageHandler] Skipped (deduplicated): ${localPath}`);
+          }
+          continue;
+        }
 
         // 读取图片文件
         const imageBuffer = await this.app.vault.adapter.readBinary(localPath);
@@ -80,6 +94,9 @@ export class ImageHandler {
             filename: fileName,
             mimeType: mimeType,
           });
+
+          // 记录已上传的文件
+          uploadedMap.set(localPath, result.permalink);
 
           // 替换为 permalink
           img.setAttribute('src', result.permalink);
