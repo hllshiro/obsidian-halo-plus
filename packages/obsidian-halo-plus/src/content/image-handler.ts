@@ -140,18 +140,37 @@ export class ImageHandler {
   }
 
   /**
-   * 从 Obsidian app:// 协议路径解析绝对路径
+   * 从 Obsidian app:// 协议路径解析 vault 内的相对路径
    *
    * app:// 协议格式: app://<vault-id>/<path>
    * 例如: app://68eceeb027539fc12f280ea51829b8c7957a/D:/Data/Notes/hllcloud.cn/Pasted%20image.png?1779936055537
    *
-   * @returns vault 内的绝对路径
+   * @returns vault 内的相对路径
    */
   private getAbsolutePathFromObsidianSrc(src: string): string | null {
     try {
       const url = new URL(src);
       // decode URI，并去掉 pathname 前面的 /
-      return decodeURIComponent(url.pathname).replace(/^\/+/, '');
+      const absolutePath = decodeURIComponent(url.pathname).replace(/^\/+/, '');
+
+      // 获取 vault 根目录
+      const vaultBasePath = this.app.vault.adapter.basePath;
+      if (!vaultBasePath) {
+        return absolutePath;
+      }
+
+      // 将 vault 根目录标准化为正斜杠格式
+      const normalizedBasePath = vaultBasePath.replace(/\\/g, '/');
+
+      // 如果绝对路径以 vault 根目录开头，提取相对路径
+      if (absolutePath.startsWith(normalizedBasePath)) {
+        const relativePath = absolutePath.substring(normalizedBasePath.length);
+        // 去掉开头的斜杠
+        return relativePath.replace(/^\/+/, '');
+      }
+
+      // 如果不以 vault 根目录开头，返回原始绝对路径
+      return absolutePath;
     } catch (error) {
       console.error(`[ImageHandler] Failed to parse app:// path: ${src}`, error);
       return null;
