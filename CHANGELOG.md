@@ -7,8 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- 图片上传：发布文章时自动上传本地图片到 Halo 附件，并将 src 替换为 permalink
+- 图片去重：相同文件只上传一次，所有引用都会被替换
+- 发布进度：发布预览模态框下方显示 Loading 动画和进度提示
+
 ### Fixed
 - 修复 i18n 语言检测：使用 Obsidian 官方 `getLanguage()` API 替代不可靠的 `vault.config.locale` 和 `navigator.language`，解决切换语言后插件仍显示中文的问题
+- 修复附件上传 API 地址：使用正确的 `/apis/console.api.storage.halo.run/v1alpha1/attachments/-/upload`
+- 修复 `app://` 协议路径解析：正确提取 vault 相对路径
+- 修复附件上传结果访问：从 `result.status.permalink` 获取 permalink
 
 ### Removed
 - 移除未使用的 `.env.example` 文件（其中变量未被任何代码引用）
