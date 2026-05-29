@@ -1,7 +1,7 @@
 {
   "id": "halo-plus",
   "name": "Halo Plus",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "minAppVersion": "1.5.0",
   "description": "Publish notes to Halo blog with native rendering support for all plugins (Dataview, Tasks, etc.).",
   "author": "hllshiro",
