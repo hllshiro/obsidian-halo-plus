@@ -4,6 +4,7 @@ import { generateSlug, parseFrontMatter, stringifyFrontMatter } from './content/
 import { ImageHandler } from './content/image-handler';
 import { i18n, t } from './i18n';
 import { PreviewRenderer } from './renderer/preview-renderer';
+import type { PublishLoading } from './ui/publish-loading';
 import { PublishPreviewModal } from './ui/publish-preview-modal';
 import { SettingsTab } from './ui/settings-tab';
 
@@ -173,7 +174,7 @@ export default class HaloPlusPlugin extends Plugin {
 
     const modal = new PublishPreviewModal(this.app, file, this.settings, frontmatter);
     modal.setOnPublish(async (site, imageMode, _loading) => {
-      await this.doPublish(file, frontmatter, site, imageMode);
+      await this.doPublish(file, frontmatter, site, imageMode, _loading);
     });
     modal.open();
   }
@@ -183,6 +184,7 @@ export default class HaloPlusPlugin extends Plugin {
     frontmatter: Record<string, unknown>,
     site: HaloSite,
     imageMode: 'upload' | 'base64',
+    loading: PublishLoading,
   ): Promise<void> {
     try {
       const client = new HaloClient({
@@ -200,18 +202,29 @@ export default class HaloPlusPlugin extends Plugin {
       component.load();
 
       try {
+        loading.updateText('正在渲染文章...');
+        console.log('[doPublish] Rendering article...');
+
         const renderer = new PreviewRenderer(this.app, component);
         const renderResult = await renderer.renderFile(file);
         const renderedHTML = renderResult.viewEl.innerHTML;
         renderResult.cleanup();
 
+        loading.updateText('正在处理附件...');
+        console.log('[doPublish] Processing attachments...');
+
         const imageHandler = new ImageHandler(this.app);
         const processedHTML = await imageHandler.processImages(
           renderedHTML,
           file,
+          client,
           imageMode,
           this.settings.imageHandling.base64Quality,
+          loading,
         );
+
+        loading.updateText('正在发布文章...');
+        console.log('[doPublish] Publishing article...');
 
         const postService = new PostService(client);
         let post: HaloPost | undefined;
@@ -238,7 +251,7 @@ export default class HaloPlusPlugin extends Plugin {
             await postService.publish(frontmatter.halo.name as string);
           }
 
-          new Notice(t('notices.updated', { title: effectiveTitle }));
+          console.log(`[doPublish] Article updated: ${effectiveTitle}`);
         } else {
           post = await postService.create({
             title: effectiveTitle,
@@ -251,7 +264,7 @@ export default class HaloPlusPlugin extends Plugin {
             content: processedHTML,
           });
 
-          new Notice(t('notices.published', { title: effectiveTitle }));
+          console.log(`[doPublish] Article created: ${effectiveTitle}`);
         }
 
         if (post) {
@@ -265,16 +278,13 @@ export default class HaloPlusPlugin extends Plugin {
             },
           });
         }
+
+        console.log(`[doPublish] Article published: ${effectiveTitle}`);
       } finally {
         component.unload();
       }
     } catch (error) {
-      console.error('Failed to publish to Halo:', error);
-      new Notice(
-        t('modals.publish.failedToPublish', {
-          error: error instanceof Error ? error.message : 'Unknown error',
-        }),
-      );
+      console.error('[doPublish] Failed:', error);
       throw error;
     }
   }
