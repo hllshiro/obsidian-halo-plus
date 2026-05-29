@@ -214,3 +214,53 @@
   border: none;
   border-top: 1px solid var(--background-modifier-border);
 }
+
+/* 按钮行 */
+.halo-plus-sidebar-button-row {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* 发布进度提示 */
+.halo-plus-publish-loading-container {
+  margin-top: 8px;
+}
+
+.halo-plus-publish-loading {
+  padding: 8px;
+  background: var(--background-secondary);
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.halo-plus-publish-loading-text {
+  display: inline-block;
+}
+
+.halo-plus-publish-loading-text::after {
+  content: "...";
+  animation: halo-plus-dots 1.5s steps(4, end) infinite;
+}
+
+.halo-plus-publish-loading-error {
+  color: var(--text-error);
+}
+
+@keyframes halo-plus-dots {
+  0%,
+  20% {
+    content: "";
+  }
+  40% {
+    content: ".";
+  }
+  60% {
+    content: "..";
+  }
+  80%,
+  100% {
+    content: "...";
+  }
+}
