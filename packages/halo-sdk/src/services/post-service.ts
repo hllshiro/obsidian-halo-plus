@@ -44,7 +44,20 @@ export class PostService {
     if (!post) {
       throw new Error(`Post not found: ${name}`);
     }
+    // 确保 spec 存在，防止文章被删除后返回不完整的对象
+    if (!post.spec) {
+      throw new Error(`Post spec is missing for: ${name}. The post may have been deleted.`);
+    }
     return post as unknown as HaloPost;
+  }
+
+  async exists(name: string): Promise<boolean> {
+    try {
+      await this.get(name);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async create(params: CreatePostParams): Promise<HaloPost> {

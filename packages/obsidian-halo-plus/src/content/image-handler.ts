@@ -1,6 +1,17 @@
 import { AttachmentService, type HaloClient } from '@obsidian-halo-plus/halo-sdk';
 import { type App, TFile } from 'obsidian';
 import type { PublishLoading } from '../ui/publish-loading';
+import type { ImageCacheEntry } from './frontmatter-parser';
+
+/**
+ * 图片处理结果
+ */
+export interface ImageProcessResult {
+  /** 处理后的 HTML */
+  html: string;
+  /** 更新后的图片缓存 */
+  imageCache: ImageCacheEntry[];
+}
 
 /**
  * 图片处理器
@@ -18,7 +29,8 @@ export class ImageHandler {
    * @param mode 处理模式：upload 或 base64
    * @param quality Base64 压缩质量（0-100）
    * @param loading 进度提示组件
-   * @returns 处理后的 HTML
+   * @param existingImageCache 已有的图片缓存
+   * @returns 处理结果，包含处理后的 HTML 和更新后的图片缓存
    */
   async processImages(
     html: string,
@@ -27,7 +39,8 @@ export class ImageHandler {
     mode: 'upload' | 'base64' = 'upload',
     quality = 80,
     loading?: PublishLoading,
-  ): Promise<string> {
+    existingImageCache?: ImageCacheEntry[],
+  ): Promise<ImageProcessResult> {
     // 解析 HTML
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
@@ -52,11 +65,39 @@ export class ImageHandler {
 
     const errors: Array<{ src: string; error: unknown }> = [];
     let uploadedCount = 0;
+    let skippedCount = 0;
 
     // 去重：记录已上传的文件路径和对应的 permalink
     const uploadedMap = new Map<string, string>();
     // 记录每个 <img> 元素对应的本地路径
     const imgPathMap = new Map<Element, string>();
+    // 构建新的图片缓存
+    const newImageCache: ImageCacheEntry[] = [];
+    // 用于跟踪已处理的本地路径，避免重复添加到缓存
+    const processedPaths = new Set<string>();
+
+    // 构建现有缓存的索引（localPath -> cache entry）
+    const cacheIndex = new Map<string, ImageCacheEntry>();
+    if (existingImageCache) {
+      for (const entry of existingImageCache) {
+        cacheIndex.set(entry.localPath, entry);
+      }
+    }
+
+    // 如果是上传模式，验证现有缓存中的附件是否仍然存在
+    const validCacheEntries = new Map<string, ImageCacheEntry>();
+    if (mode === 'upload' && client && existingImageCache && existingImageCache.length > 0) {
+      const attachmentService = new AttachmentService(client);
+      for (const entry of existingImageCache) {
+        try {
+          await attachmentService.get(entry.attachmentName);
+          validCacheEntries.set(entry.localPath, entry);
+          console.log(`[ImageHandler] Cache validated: ${entry.localPath} -> ${entry.permalink}`);
+        } catch {
+          console.log(`[ImageHandler] Cache invalid (attachment deleted): ${entry.localPath}`);
+        }
+      }
+    }
 
     // 阶段一：解析所有图片路径，上传唯一文件
     for (const img of localImages) {
@@ -69,8 +110,25 @@ export class ImageHandler {
 
         imgPathMap.set(img, localPath);
 
-        // 已上传过，跳过
+        // 已在本次处理中上传过，跳过
         if (uploadedMap.has(localPath)) {
+          continue;
+        }
+
+        // 检查缓存中是否有有效的图片记录
+        const cachedEntry = validCacheEntries.get(localPath);
+        if (cachedEntry) {
+          // 使用缓存的 permalink，跳过上传
+          uploadedMap.set(localPath, cachedEntry.permalink);
+          skippedCount++;
+
+          // 添加到新缓存
+          if (!processedPaths.has(localPath)) {
+            newImageCache.push(cachedEntry);
+            processedPaths.add(localPath);
+          }
+
+          console.log(`[ImageHandler] Skipped (cached): ${localPath} -> ${cachedEntry.permalink}`);
           continue;
         }
 
@@ -93,8 +151,19 @@ export class ImageHandler {
           });
 
           const permalink = result.status?.permalink;
+          const attachmentName = result.metadata?.name;
           uploadedMap.set(localPath, permalink);
           uploadedCount++;
+
+          // 添加到新缓存
+          if (!processedPaths.has(localPath)) {
+            newImageCache.push({
+              localPath,
+              permalink,
+              attachmentName,
+            });
+            processedPaths.add(localPath);
+          }
 
           console.log(`[ImageHandler] Uploaded: ${fileName} -> ${permalink}`);
         } else {
@@ -115,6 +184,11 @@ export class ImageHandler {
       }
     }
 
+    // 记录处理统计
+    if (skippedCount > 0) {
+      console.log(`[ImageHandler] Skipped ${skippedCount} cached images`);
+    }
+
     // 如果有图片上传失败，抛出错误
     if (errors.length > 0) {
       const errorMessages = errors
@@ -123,7 +197,10 @@ export class ImageHandler {
       throw new Error(`Failed to upload ${errors.length} image(s):\n${errorMessages}`);
     }
 
-    return doc.body.innerHTML;
+    return {
+      html: doc.body.innerHTML,
+      imageCache: newImageCache,
+    };
   }
 
   /**

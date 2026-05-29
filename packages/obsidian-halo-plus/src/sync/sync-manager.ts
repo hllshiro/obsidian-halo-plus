@@ -1,6 +1,7 @@
 import { HaloClient, type HaloPost, PostService } from '@obsidian-halo-plus/halo-sdk';
 import { type App, Component, type TFile } from 'obsidian';
 import {
+  type ImageCacheEntry,
   generateSlug,
   parseFrontMatter,
   stringifyFrontMatter,
@@ -44,7 +45,7 @@ export class SyncManager {
       }
 
       const content = await this.app.vault.read(file);
-      const frontmatter = parseFrontMatter(content);
+      let frontmatter = parseFrontMatter(content);
 
       const component = new Component();
       component.load();
@@ -56,20 +57,45 @@ export class SyncManager {
         renderResult.cleanup();
 
         const imageHandler = new ImageHandler(this.app);
-        const processedHTML = await imageHandler.processImages(
+        const existingImageCache = (frontmatter.halo?.images as ImageCacheEntry[]) || [];
+        const imageResult = await imageHandler.processImages(
           renderedHTML,
           file,
+          client,
           this.plugin.settings.imageHandling.defaultMode,
           this.plugin.settings.imageHandling.base64Quality,
+          undefined,
+          existingImageCache,
         );
+        const processedHTML = imageResult.html;
+        const updatedImageCache = imageResult.imageCache;
 
         const postService = new PostService(client);
         let post: HaloPost | undefined;
         const effectiveTitle = frontmatter.title || file.basename;
         const effectiveSlug = frontmatter.slug || generateSlug(effectiveTitle);
 
+        // 检查是否是更新操作
+        let isUpdate = false;
         if (frontmatter.halo?.name) {
-          post = await postService.update(frontmatter.halo.name, {
+          // 验证文章是否真的存在于 Halo 中
+          const postExists = await postService.exists(frontmatter.halo.name);
+          if (postExists) {
+            isUpdate = true;
+          } else {
+            // 文章已被删除，清除本地 halo 信息
+            console.log(
+              `[SyncManager] Post ${frontmatter.halo.name} not found in Halo, will create new post`,
+            );
+            await this.updateFrontMatter(file, { halo: undefined });
+            frontmatter = { ...frontmatter, halo: undefined };
+          }
+        }
+
+        const haloName = frontmatter.halo?.name;
+
+        if (isUpdate && haloName) {
+          post = await postService.update(haloName, {
             title: effectiveTitle,
             slug: effectiveSlug,
             tags: frontmatter.tags,
@@ -78,14 +104,14 @@ export class SyncManager {
             excerpt: frontmatter.excerpt,
           });
 
-          await postService.updateContent(frontmatter.halo.name, {
+          await postService.updateContent(haloName, {
             raw: processedHTML,
             content: processedHTML,
             rawType: 'HTML',
           });
 
           if (this.plugin.settings.publishBehavior.publishByDefault) {
-            await postService.publish(frontmatter.halo.name);
+            await postService.publish(haloName);
           }
         } else {
           post = await postService.create({
@@ -108,6 +134,7 @@ export class SyncManager {
               site: site.url,
               name: post.metadata.name,
               publish: this.plugin.settings.publishBehavior.publishByDefault,
+              images: updatedImageCache,
             },
           });
         }

@@ -1,6 +1,11 @@
 import { HaloClient, type HaloPost, PostService } from '@obsidian-halo-plus/halo-sdk';
 import { Component, Notice, Plugin, TFile } from 'obsidian';
-import { generateSlug, parseFrontMatter, stringifyFrontMatter } from './content/frontmatter-parser';
+import {
+  type ImageCacheEntry,
+  generateSlug,
+  parseFrontMatter,
+  stringifyFrontMatter,
+} from './content/frontmatter-parser';
 import { ImageHandler } from './content/image-handler';
 import { i18n, t } from './i18n';
 import { PreviewRenderer } from './renderer/preview-renderer';
@@ -214,14 +219,18 @@ export default class HaloPlusPlugin extends Plugin {
         console.log('[doPublish] Processing attachments...');
 
         const imageHandler = new ImageHandler(this.app);
-        const processedHTML = await imageHandler.processImages(
+        const existingImageCache = (frontmatter.halo?.images as ImageCacheEntry[]) || [];
+        const imageResult = await imageHandler.processImages(
           renderedHTML,
           file,
           client,
           imageMode,
           this.settings.imageHandling.base64Quality,
           loading,
+          existingImageCache,
         );
+        const processedHTML = imageResult.html;
+        const updatedImageCache = imageResult.imageCache;
 
         loading.updateText('正在发布文章...');
         console.log('[doPublish] Publishing article...');
@@ -231,24 +240,46 @@ export default class HaloPlusPlugin extends Plugin {
         const effectiveTitle = (frontmatter.title as string) || file.basename;
         const effectiveSlug = (frontmatter.slug as string) || generateSlug(effectiveTitle);
 
-        if (frontmatter.halo?.name) {
-          post = await postService.update(frontmatter.halo.name as string, {
+        // 使用局部变量避免参数重赋值
+        let currentFrontmatter = frontmatter;
+
+        // 检查是否是更新操作
+        let isUpdate = false;
+        if (currentFrontmatter.halo?.name) {
+          // 验证文章是否真的存在于 Halo 中
+          const postExists = await postService.exists(currentFrontmatter.halo.name as string);
+          if (postExists) {
+            isUpdate = true;
+          } else {
+            // 文章已被删除，清除本地 halo 信息
+            console.log(
+              `[doPublish] Post ${currentFrontmatter.halo.name} not found in Halo, will create new post`,
+            );
+            await this.updateFrontMatter(file, { halo: undefined });
+            currentFrontmatter = { ...currentFrontmatter, halo: undefined };
+          }
+        }
+
+        const haloName = currentFrontmatter.halo?.name as string | undefined;
+
+        if (isUpdate && haloName) {
+          post = await postService.update(haloName, {
             title: effectiveTitle,
             slug: effectiveSlug,
-            tags: frontmatter.tags as string[],
-            categories: frontmatter.categories as string[],
-            cover: frontmatter.cover as string,
-            excerpt: frontmatter.excerpt as string,
+            tags: currentFrontmatter.tags as string[],
+            categories: currentFrontmatter.categories as string[],
+            cover: currentFrontmatter.cover as string,
+            excerpt: currentFrontmatter.excerpt as string,
           });
 
-          await postService.updateContent(frontmatter.halo.name as string, {
+          await postService.updateContent(haloName, {
             raw: processedHTML,
             content: processedHTML,
             rawType: 'HTML',
           });
 
           if (this.settings.publishBehavior.publishByDefault) {
-            await postService.publish(frontmatter.halo.name as string);
+            await postService.publish(haloName);
           }
 
           console.log(`[doPublish] Article updated: ${effectiveTitle}`);
@@ -256,10 +287,10 @@ export default class HaloPlusPlugin extends Plugin {
           post = await postService.create({
             title: effectiveTitle,
             slug: effectiveSlug,
-            tags: frontmatter.tags as string[],
-            categories: frontmatter.categories as string[],
-            cover: frontmatter.cover as string,
-            excerpt: frontmatter.excerpt as string,
+            tags: currentFrontmatter.tags as string[],
+            categories: currentFrontmatter.categories as string[],
+            cover: currentFrontmatter.cover as string,
+            excerpt: currentFrontmatter.excerpt as string,
             publish: this.settings.publishBehavior.publishByDefault,
             content: processedHTML,
           });
@@ -275,6 +306,7 @@ export default class HaloPlusPlugin extends Plugin {
               site: site.url,
               name: post.metadata.name,
               publish: this.settings.publishBehavior.publishByDefault,
+              images: updatedImageCache,
             },
           });
         }

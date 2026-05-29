@@ -1,6 +1,18 @@
 import matter from 'gray-matter';
 
 /**
+ * 已上传图片缓存信息
+ */
+export interface ImageCacheEntry {
+  /** 本地图片路径（相对于 vault） */
+  localPath: string;
+  /** Halo 附件 permalink */
+  permalink: string;
+  /** Halo 附件名称（用于验证附件是否存在） */
+  attachmentName: string;
+}
+
+/**
  * FrontMatter 数据接口
  */
 export interface FrontMatterData {
@@ -15,6 +27,7 @@ export interface FrontMatterData {
     site: string;
     name: string;
     publish: boolean;
+    images?: ImageCacheEntry[];
   };
   [key: string]: unknown;
 }
