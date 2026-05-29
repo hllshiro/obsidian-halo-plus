@@ -1,4 +1,6 @@
+import { AttachmentService, type HaloClient } from '@obsidian-halo-plus/halo-sdk';
 import { type App, TFile } from 'obsidian';
+import type { PublishLoading } from '../ui/publish-loading';
 
 /**
  * 图片处理器
@@ -12,22 +14,44 @@ export class ImageHandler {
    *
    * @param html 原始 HTML
    * @param currentFile 当前文件
+   * @param client Halo 客户端（upload 模式需要）
    * @param mode 处理模式：upload 或 base64
    * @param quality Base64 压缩质量（0-100）
+   * @param loading 进度提示组件
    * @returns 处理后的 HTML
    */
   async processImages(
     html: string,
     currentFile: TFile,
+    client?: HaloClient,
     mode: 'upload' | 'base64' = 'upload',
     quality = 80,
+    loading?: PublishLoading,
   ): Promise<string> {
     // 解析 HTML
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
     const images = doc.querySelectorAll('img');
 
-    for (const img of Array.from(images)) {
+    // 筛选本地图片
+    const localImages = Array.from(images).filter((img) => {
+      const src = img.getAttribute('src');
+      if (!src) return false;
+      // 跳过网络图片
+      if (src.startsWith('http://') || src.startsWith('https://')) {
+        return false;
+      }
+      return true;
+    });
+
+    // Loading: 发现本地图片
+    if (localImages.length > 0 && loading) {
+      loading.updateText(`发现 ${localImages.length} 张本地图片`);
+      console.log(`[ImageHandler] Found ${localImages.length} local images`);
+    }
+
+    let uploadedCount = 0;
+    for (const img of localImages) {
       const src = img.getAttribute('src');
       if (!src) continue;
 
@@ -40,18 +64,34 @@ export class ImageHandler {
         const imageBuffer = await this.app.vault.adapter.readBinary(localPath);
         const mimeType = this.getMimeType(localPath);
 
-        if (mode === 'upload') {
-          // TODO: 上传到 Halo（需要 AttachmentService）
-          // 暂时使用 Base64
-          const base64 = await this.imageToBase64(imageBuffer, mimeType, quality);
-          img.setAttribute('src', `data:${mimeType};base64,${base64}`);
+        if (mode === 'upload' && client) {
+          // Loading: 正在上传附件
+          if (loading) {
+            loading.updateText(`正在上传附件 (${uploadedCount + 1}/${localImages.length})`);
+          }
+
+          // 上传到 Halo
+          const blob = new Blob([imageBuffer], { type: mimeType });
+          const fileName = localPath.split('/').pop() || 'image.png';
+          const attachmentService = new AttachmentService(client);
+          const result = await attachmentService.upload({
+            file: blob,
+            filename: fileName,
+            mimeType: mimeType,
+          });
+
+          // 替换为 permalink
+          img.setAttribute('src', result.permalink);
+          uploadedCount++;
+
+          console.log(`[ImageHandler] Uploaded: ${fileName} -> ${result.permalink}`);
         } else {
           // Base64 内嵌
           const base64 = await this.imageToBase64(imageBuffer, mimeType, quality);
           img.setAttribute('src', `data:${mimeType};base64,${base64}`);
         }
       } catch (error) {
-        console.error(`Failed to process image: ${src}`, error);
+        console.error(`[ImageHandler] Failed to process image: ${src}`, error);
       }
     }
 
