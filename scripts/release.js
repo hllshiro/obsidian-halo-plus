@@ -27,29 +27,29 @@ if (!versionRegex.test(version)) {
 // 获取项目根目录
 const projectRoot = path.resolve(__dirname, '..');
 
-// 更新 packages/obsidian-halo-plus/manifest.json
-const pluginManifestPath = path.join(projectRoot, 'packages', 'obsidian-halo-plus', 'manifest.json');
+// 更新 manifest.json
+const pluginManifestPath = path.join(projectRoot, 'manifest.json');
 let minAppVersion = '1.5.0'; // 默认值
 if (fs.existsSync(pluginManifestPath)) {
   const pluginManifest = JSON.parse(fs.readFileSync(pluginManifestPath, 'utf8'));
   minAppVersion = pluginManifest.minAppVersion || '1.5.0';
   pluginManifest.version = version;
   fs.writeFileSync(pluginManifestPath, JSON.stringify(pluginManifest, null, '\t') + '\n');
-  console.log(`✓ 更新 packages/obsidian-halo-plus/manifest.json 版本号为 ${version}`);
+  console.log(`✓ 更新 manifest.json 版本号为 ${version}`);
 } else {
-  console.error('错误: packages/obsidian-halo-plus/manifest.json 不存在');
+  console.error('错误: manifest.json 不存在');
   process.exit(1);
 }
 
-// 更新 packages/obsidian-halo-plus/versions.json
-const versionsPath = path.join(projectRoot, 'packages', 'obsidian-halo-plus', 'versions.json');
+// 更新 versions.json
+const versionsPath = path.join(projectRoot, 'versions.json');
 if (fs.existsSync(versionsPath)) {
   const versions = JSON.parse(fs.readFileSync(versionsPath, 'utf8'));
   versions[version] = minAppVersion;
   fs.writeFileSync(versionsPath, JSON.stringify(versions, null, '\t') + '\n');
-  console.log(`✓ 更新 packages/obsidian-halo-plus/versions.json 添加 ${version}: ${minAppVersion}`);
+  console.log(`✓ 更新 versions.json 添加 ${version}: ${minAppVersion}`);
 } else {
-  console.error('错误: packages/obsidian-halo-plus/versions.json 不存在');
+  console.error('错误: versions.json 不存在');
   process.exit(1);
 }
 
@@ -67,7 +67,7 @@ if (fs.existsSync(pluginPackagePath)) {
 
 // 创建 git commit
 try {
-  execSync('git add packages/obsidian-halo-plus/manifest.json packages/obsidian-halo-plus/versions.json packages/obsidian-halo-plus/package.json', { cwd: projectRoot });
+  execSync('git add manifest.json versions.json packages/obsidian-halo-plus/package.json', { cwd: projectRoot });
   execSync(`git commit -m "chore(release): ${version}"`, { cwd: projectRoot });
   console.log(`✓ 创建 git commit: chore(release): ${version}`);
 } catch (error) {

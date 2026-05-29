@@ -43,7 +43,6 @@ Internal dependency: plugin and CLI both depend on `halo-sdk` via `workspace:*`.
 - Output: `packages/obsidian-halo-plus/dist/main.js` (CJS, es2018 target)
 - Externalized: `obsidian`, `electron`, all `@codemirror/*`, `@lezer/*`
 - `styles.css` is copied to `dist/` during build (not bundled)
-- `scripts/copy-to-root.js` copies plugin artifacts (main.js, manifest.json, styles.css, versions.json) to repo root for release
 
 ### SDK Build Specifics
 
@@ -62,7 +61,7 @@ Internal dependency: plugin and CLI both depend on `halo-sdk` via `workspace:*`.
 
 Triggered by git tags. Release workflow:
 
-1. Validates version consistency: `packages/obsidian-halo-plus/package.json` version must match `manifest.json` version and the git tag
+1. Validates version consistency: `packages/obsidian-halo-plus/package.json` version must match root `manifest.json` version and the git tag
 2. Builds all packages
 3. Publishes `main.js`, `manifest.json`, `styles.css` as GitHub Release assets
 
@@ -75,13 +74,14 @@ Update version in both `package.json` and `manifest.json` before tagging.
 - `packages/obsidian-halo-plus/src/main.ts` — plugin entry, exports `HaloPlusPlugin`
 - `packages/halo-sdk/src/client.ts` — `HaloClient` class, wraps axios + @halo-dev/api-client
 - `packages/obsidian-halo-plus/esbuild.config.mjs` — plugin bundler config
-- `manifest.json` (root) — copied from plugin package, used by Obsidian
+- `manifest.json` and `versions.json` (root) — Obsidian plugin metadata, maintained directly at repo root
 - `biome.json` — lint/format config
 - `.env.example` — test env vars (`VITE_HALO_TEST_URL`, `VITE_HALO_TEST_TOKEN`)
 
 ## Gotchas
 
-- Root `main.js` and `manifest.json` are **generated artifacts** (copied from plugin package). Do not edit them directly.
+- Root `main.js` is a **generated artifact** (build output). Do not edit it directly.
+- Root `manifest.json` and `versions.json` are **maintained at repo root** as the source of truth (Obsidian requires manifest.json at root).
 - `.gitignore` excludes `*.js` at root but explicitly allows specific files via negation patterns — check before adding new `.js` files.
 - `test.sh` is a local-only deploy script (hardcoded Windows/WSL path), not a test suite.
 - `reference/` and `.omo/` directories are internal/planning — excluded from git.

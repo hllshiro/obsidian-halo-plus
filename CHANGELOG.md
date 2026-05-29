@@ -58,10 +58,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 - 无
-
-## [0.0.1] - 2024-XX-XX
-
-### Added
-- 项目初始化
-- Monorepo 架构搭建
-- 基础类型定义
