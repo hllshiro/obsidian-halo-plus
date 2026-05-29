@@ -96,14 +96,14 @@ export class ImageHandler {
           });
 
           // 记录已上传的文件
-          console.log('[ImageHandler] Upload result:', result);
-          uploadedMap.set(localPath, result.permalink || result.status?.permalink);
+          const permalink = result.status?.permalink;
+          uploadedMap.set(localPath, permalink);
 
           // 替换为 permalink
-          img.setAttribute('src', result.permalink);
+          img.setAttribute('src', permalink || '');
           uploadedCount++;
 
-          console.log(`[ImageHandler] Uploaded: ${fileName} -> ${result.permalink}`);
+          console.log(`[ImageHandler] Uploaded: ${fileName} -> ${permalink}`);
         } else {
           // Base64 内嵌
           const base64 = await this.imageToBase64(imageBuffer, mimeType, quality);
