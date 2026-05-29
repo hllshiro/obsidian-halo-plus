@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- 修复 i18n 语言检测：使用 Obsidian 官方 `getLanguage()` API 替代不可靠的 `vault.config.locale` 和 `navigator.language`，解决切换语言后插件仍显示中文的问题
+
 ### Removed
 - 移除未使用的 `.env.example` 文件（其中变量未被任何代码引用）
 

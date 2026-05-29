@@ -1,4 +1,4 @@
-import type { App } from 'obsidian';
+import { type App, getLanguage } from 'obsidian';
 import en from './en.json';
 import type { Locale } from './types';
 import zh from './zh.json';
@@ -9,23 +9,8 @@ class I18nManager {
   private locale: Locale = 'en';
   private translations: Record<Locale, TranslationKeys> = { en, zh };
 
-  init(app: App): void {
-    let obsidianLocale = 'en';
-
-    // 方法1: 通过 vault.config (Obsidian 1.4+)
-    if (app.vault && 'config' in app.vault) {
-      const vaultWithConfig = app.vault as Record<string, unknown>;
-      const config = vaultWithConfig.config as Record<string, unknown> | undefined;
-      if (config && typeof config.locale === 'string') {
-        obsidianLocale = config.locale;
-      }
-    }
-
-    // 方法2: 通过 navigator.language 最终备用
-    if (obsidianLocale === 'en') {
-      obsidianLocale = navigator.language || 'en';
-    }
-
+  init(_app: App): void {
+    const obsidianLocale = getLanguage() || 'en';
     this.locale = obsidianLocale.startsWith('zh') ? 'zh' : 'en';
   }
 
