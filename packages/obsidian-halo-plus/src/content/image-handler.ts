@@ -96,7 +96,8 @@ export class ImageHandler {
           });
 
           // 记录已上传的文件
-          uploadedMap.set(localPath, result.permalink);
+          console.log('[ImageHandler] Upload result:', result);
+          uploadedMap.set(localPath, result.permalink || result.status?.permalink);
 
           // 替换为 permalink
           img.setAttribute('src', result.permalink);
