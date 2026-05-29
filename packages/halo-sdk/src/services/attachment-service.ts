@@ -51,6 +51,11 @@ export class AttachmentService {
       formData.append('file', blob, params.filename);
     }
 
+    // 添加 policyName 参数，默认为 'default'
+    if (params.policyName) {
+      formData.append('policyName', params.policyName);
+    }
+
     const response = await httpClient.post(
       '/apis/api.console.halo.run/v1alpha1/attachments/upload',
       formData,

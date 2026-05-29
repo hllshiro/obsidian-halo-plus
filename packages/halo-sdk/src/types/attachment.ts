@@ -38,6 +38,7 @@ export interface UploadAttachmentParams {
   file: File | Blob | ArrayBuffer;
   filename: string;
   mimeType: string;
+  policyName?: string;
 }
 
 export interface ListAttachmentsParams {
