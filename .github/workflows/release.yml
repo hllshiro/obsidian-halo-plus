@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: write
+  id-token: write
+  attestations: write
 
 jobs:
   build:
@@ -14,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@v4
         with:
           version: 8
 
@@ -43,13 +45,32 @@ jobs:
       # 构建所有包
       - run: pnpm build
 
+      # 生成 artifact attestation（构建来源证明）
+      - name: Generate artifact attestation
+        uses: actions/attest@v4
+        with:
+          subject-path: |
+            packages/obsidian-halo-plus/dist/main.js
+            manifest.json
+            packages/obsidian-halo-plus/styles.css
+
+      # 生成 SHA256 校验和
+      - name: Generate checksums
+        run: |
+          sha256sum \
+            packages/obsidian-halo-plus/dist/main.js \
+            manifest.json \
+            packages/obsidian-halo-plus/styles.css \
+            > checksums.txt
+
       # 创建 GitHub Release
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             packages/obsidian-halo-plus/dist/main.js
             manifest.json
             packages/obsidian-halo-plus/styles.css
+            checksums.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
