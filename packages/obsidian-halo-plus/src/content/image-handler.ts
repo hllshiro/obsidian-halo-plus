@@ -135,8 +135,12 @@ export class ImageHandler {
       });
     }
 
-    // Node.js 环境（测试用）
-    const nodeBuffer = Buffer.from(buffer);
-    return nodeBuffer.toString('base64');
+    // 使用纯浏览器 API 转换 ArrayBuffer 为 base64
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    for (const byte of bytes) {
+      binary += String.fromCharCode(byte);
+    }
+    return btoa(binary);
   }
 }

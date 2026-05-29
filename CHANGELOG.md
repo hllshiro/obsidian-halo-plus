@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-05-29
+
+### Fixed
+- 移除 i18n 中对 localStorage 的依赖，仅保留 vault.config 和 navigator.language
+- 将 `vault.getFiles()` 替换为 `vault.getMarkdownFiles()`，减少不必要的 vault 枚举
+- 将图片处理中的 Node.js `Buffer.from()` 替换为浏览器原生 `btoa()`，消除 Node.js API 依赖
+- 移除冗余的 checksums.txt（artifact attestation 已覆盖校验需求）
+
+## [0.3.0] - 2026-05-29
+
+### Added
+- CI: 新增 GitHub artifact attestation，验证构建来源
+- CI: 新增 SHA256 校验和文件
+- CI: 升级 action-gh-release v2、pnpm/action-setup v4
+
+### Changed
+- 将 `manifest.json` 和 `versions.json` 迁移至仓库根目录（Obsidian 要求）
+- 更新 release 脚本适配新的文件路径
+
+### Fixed
+- 修复 release 脚本中 versions.json 维护逻辑
+- 移除未使用的根目录 manifest.json 和 copy-to-root.js
+
 ## [0.2.0] - 2026-05-28
 
 ### Added

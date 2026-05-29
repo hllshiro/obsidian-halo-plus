@@ -52,15 +52,6 @@ jobs:
             manifest.json
             packages/obsidian-halo-plus/styles.css
 
-      # 生成 SHA256 校验和
-      - name: Generate checksums
-        run: |
-          sha256sum \
-            packages/obsidian-halo-plus/dist/main.js \
-            manifest.json \
-            packages/obsidian-halo-plus/styles.css \
-            > checksums.txt
-
       # 创建 GitHub Release
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -69,6 +60,5 @@ jobs:
             packages/obsidian-halo-plus/dist/main.js
             manifest.json
             packages/obsidian-halo-plus/styles.css
-            checksums.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -21,19 +21,7 @@ class I18nManager {
       }
     }
 
-    // 方法2: 通过 localStorage 备用
-    if (obsidianLocale === 'en') {
-      try {
-        const savedLocale = localStorage.getItem('obsidian-locale');
-        if (savedLocale) {
-          obsidianLocale = savedLocale;
-        }
-      } catch (_e) {
-        // localStorage 可能不可用
-      }
-    }
-
-    // 方法3: 通过 navigator.language 最终备用
+    // 方法2: 通过 navigator.language 最终备用
     if (obsidianLocale === 'en') {
       obsidianLocale = navigator.language || 'en';
     }

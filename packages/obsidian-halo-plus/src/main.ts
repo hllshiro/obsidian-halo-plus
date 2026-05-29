@@ -334,7 +334,9 @@ export default class HaloPlusPlugin extends Plugin {
     new Notice(t('notices.syncingAll'));
 
     for (const folder of this.settings.autoSync.folders) {
-      const files = this.app.vault.getFiles().filter((file) => file.path.startsWith(folder));
+      const files = this.app.vault
+        .getMarkdownFiles()
+        .filter((file) => file.path.startsWith(folder));
 
       for (const file of files) {
         try {
