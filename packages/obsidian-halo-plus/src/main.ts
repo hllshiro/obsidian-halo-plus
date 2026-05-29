@@ -280,11 +280,17 @@ export default class HaloPlusPlugin extends Plugin {
         }
 
         console.log(`[doPublish] Article published: ${effectiveTitle}`);
+        new Notice(t('notices.published', { title: effectiveTitle }));
       } finally {
         component.unload();
       }
     } catch (error) {
       console.error('[doPublish] Failed:', error);
+      new Notice(
+        t('modals.publish.failedToPublish', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+        }),
+      );
       throw error;
     }
   }

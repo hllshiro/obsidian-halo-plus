@@ -50,6 +50,7 @@ export class ImageHandler {
       console.log(`[ImageHandler] Found ${localImages.length} local images`);
     }
 
+    const errors: Array<{ src: string; error: unknown }> = [];
     let uploadedCount = 0;
     for (const img of localImages) {
       const src = img.getAttribute('src');
@@ -92,7 +93,16 @@ export class ImageHandler {
         }
       } catch (error) {
         console.error(`[ImageHandler] Failed to process image: ${src}`, error);
+        errors.push({ src, error });
       }
+    }
+
+    // 如果有图片上传失败，抛出错误
+    if (errors.length > 0) {
+      const errorMessages = errors
+        .map((e) => `${e.src}: ${e.error instanceof Error ? e.error.message : 'Unknown error'}`)
+        .join('\n');
+      throw new Error(`Failed to upload ${errors.length} image(s):\n${errorMessages}`);
     }
 
     return doc.body.innerHTML;
