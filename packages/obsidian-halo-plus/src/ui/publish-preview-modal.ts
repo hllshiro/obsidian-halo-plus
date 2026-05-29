@@ -1,7 +1,8 @@
-import { type App, Component, Modal, Notice, Setting, type TFile } from 'obsidian';
+import { type App, Component, Modal, Setting, type TFile } from 'obsidian';
 import { t } from '../i18n';
 import type { HaloSite, PluginSettings } from '../main';
 import { PreviewRenderer, type RenderResult } from '../renderer/preview-renderer';
+import { PublishLoading } from './publish-loading';
 
 /**
  * 发布预览 Modal 回调
@@ -30,8 +31,15 @@ export class PublishPreviewModal extends Modal {
   private imageMode: 'upload' | 'base64';
   private isPublishing = false;
 
+  // Loading 组件
+  private loading: PublishLoading | null = null;
+
   // 回调
-  private onPublish?: (site: HaloSite, imageMode: 'upload' | 'base64') => Promise<void>;
+  private onPublish?: (
+    site: HaloSite,
+    imageMode: 'upload' | 'base64',
+    loading: PublishLoading,
+  ) => Promise<void>;
 
   constructor(
     app: App,
@@ -53,7 +61,13 @@ export class PublishPreviewModal extends Modal {
   /**
    * 设置发布回调
    */
-  setOnPublish(callback: (site: HaloSite, imageMode: 'upload' | 'base64') => Promise<void>): void {
+  setOnPublish(
+    callback: (
+      site: HaloSite,
+      imageMode: 'upload' | 'base64',
+      loading: PublishLoading,
+    ) => Promise<void>,
+  ): void {
     this.onPublish = callback;
   }
 
@@ -229,8 +243,11 @@ export class PublishPreviewModal extends Modal {
     // 按钮区域
     const buttonSection = container.createDiv({ cls: 'halo-plus-sidebar-buttons' });
 
+    // 按钮行
+    const buttonRow = buttonSection.createDiv({ cls: 'halo-plus-sidebar-button-row' });
+
     // 取消按钮
-    const cancelBtn = buttonSection.createEl('button', {
+    const cancelBtn = buttonRow.createEl('button', {
       text: t('modals.publish.cancel'),
       cls: 'halo-plus-btn halo-plus-btn-cancel',
     });
@@ -239,10 +256,16 @@ export class PublishPreviewModal extends Modal {
     });
 
     // 发布按钮
-    const publishBtn = buttonSection.createEl('button', {
+    const publishBtn = buttonRow.createEl('button', {
       text: t('modals.publish.publish'),
       cls: 'halo-plus-btn halo-plus-btn-publish mod-cta',
     });
+
+    // Loading 容器（按钮行下方，独立行）
+    const loadingContainer = buttonSection.createDiv({
+      cls: 'halo-plus-publish-loading-container',
+    });
+
     publishBtn.addEventListener('click', async () => {
       if (this.isPublishing) return;
 
@@ -250,21 +273,36 @@ export class PublishPreviewModal extends Modal {
       publishBtn.setText(t('modals.publish.publishing'));
       publishBtn.disabled = true;
 
+      // 创建 Loading 组件
+      this.loading = new PublishLoading(loadingContainer);
+      this.loading.load();
+
       try {
         if (this.onPublish) {
-          await this.onPublish(this.selectedSite, this.imageMode);
+          await this.onPublish(this.selectedSite, this.imageMode, this.loading);
         }
         this.close();
       } catch (error) {
-        new Notice(
-          t('modals.publish.failedToPublish', {
-            error: error instanceof Error ? error.message : 'Unknown error',
-          }),
-        );
+        // 显示错误信息
+        if (this.loading) {
+          this.loading.showError(
+            t('modals.publish.failedToPublish', {
+              error: error instanceof Error ? error.message : 'Unknown error',
+            }),
+          );
+        }
+        // 延迟关闭，让用户看到错误信息
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        this.close();
       } finally {
         this.isPublishing = false;
         publishBtn.setText(t('modals.publish.publish'));
         publishBtn.disabled = false;
+        // 清理 Loading
+        if (this.loading) {
+          this.loading.unload();
+          this.loading = null;
+        }
       }
     });
   }

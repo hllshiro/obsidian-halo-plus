@@ -172,7 +172,7 @@ export default class HaloPlusPlugin extends Plugin {
     const frontmatter = parseFrontMatter(content);
 
     const modal = new PublishPreviewModal(this.app, file, this.settings, frontmatter);
-    modal.setOnPublish(async (site, imageMode) => {
+    modal.setOnPublish(async (site, imageMode, _loading) => {
       await this.doPublish(file, frontmatter, site, imageMode);
     });
     modal.open();
