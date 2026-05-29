@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-05-28
+
+### Added
+- 国际化 (i18n) 支持：中英文双语，跟随 Obsidian 语言设置自动切换
+- i18n 基础设施：类型定义、翻译文件、管理器
+- 版本发布脚本：支持自动更新版本号、创建 git commit 和 tag
+
+### Changed
+- 设置页面：所有 UI 文本已国际化
+- 发布预览模态框：所有 UI 文本已国际化
+- 发布模态框：所有 UI 文本已国际化
+- 状态栏：所有 UI 文本已国际化
+- 命令面板：命令名称已国际化
+- 右键菜单：菜单文本已国际化
+- 通知消息：所有通知文本已国际化
+
+### Fixed
+- SiteModal 表单字段国际化
+
 ## [0.1.0] - 2026-05-28
 
 ### Added
