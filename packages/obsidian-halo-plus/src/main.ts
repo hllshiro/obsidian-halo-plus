@@ -220,6 +220,13 @@ export default class HaloPlusPlugin extends Plugin {
 
         const imageHandler = new ImageHandler(this.app);
         const existingImageCache = (frontmatter.halo?.images as ImageCacheEntry[]) || [];
+        console.log('[doPublish] Existing image cache:', {
+          count: existingImageCache.length,
+          images: existingImageCache.map((img) => ({
+            localPath: img.localPath,
+            attachmentName: img.attachmentName,
+          })),
+        });
         const imageResult = await imageHandler.processImages(
           renderedHTML,
           file,
@@ -231,6 +238,13 @@ export default class HaloPlusPlugin extends Plugin {
         );
         const processedHTML = imageResult.html;
         const updatedImageCache = imageResult.imageCache;
+        console.log('[doPublish] Updated image cache:', {
+          count: updatedImageCache.length,
+          images: updatedImageCache.map((img) => ({
+            localPath: img.localPath,
+            attachmentName: img.attachmentName,
+          })),
+        });
 
         loading.updateText('正在发布文章...');
         console.log('[doPublish] Publishing article...');
@@ -245,11 +259,18 @@ export default class HaloPlusPlugin extends Plugin {
 
         // 检查是否是更新操作
         let isUpdate = false;
+        console.log('[doPublish] Frontmatter halo info:', currentFrontmatter.halo);
         if (currentFrontmatter.halo?.name) {
+          console.log(
+            '[doPublish] Found existing halo name, checking if post exists:',
+            currentFrontmatter.halo.name,
+          );
           // 验证文章是否真的存在于 Halo 中
           const postExists = await postService.exists(currentFrontmatter.halo.name as string);
+          console.log('[doPublish] Post exists check result:', postExists);
           if (postExists) {
             isUpdate = true;
+            console.log('[doPublish] Will update existing post');
           } else {
             // 文章已被删除，清除本地 halo 信息
             console.log(
@@ -258,11 +279,15 @@ export default class HaloPlusPlugin extends Plugin {
             await this.updateFrontMatter(file, { halo: undefined });
             currentFrontmatter = { ...currentFrontmatter, halo: undefined };
           }
+        } else {
+          console.log('[doPublish] No existing halo name found, will create new post');
         }
 
         const haloName = currentFrontmatter.halo?.name as string | undefined;
+        console.log('[doPublish] Final decision:', { isUpdate, haloName });
 
         if (isUpdate && haloName) {
+          console.log('[doPublish] Calling postService.update with name:', haloName);
           post = await postService.update(haloName, {
             title: effectiveTitle,
             slug: effectiveSlug,

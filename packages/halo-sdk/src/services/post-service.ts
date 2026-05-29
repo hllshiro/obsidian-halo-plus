@@ -35,10 +35,16 @@ export class PostService {
   }
 
   async get(name: string): Promise<HaloPost> {
+    console.log('[PostService.get] Querying post:', name);
     const response = await this.client.consoleApi.content.post.listPosts({
-      fieldSelector: [`metadata.name=${name}`],
+      fieldSelector: [`metadata.name==${name}`],
       page: 0,
       size: 1,
+    });
+    console.log('[PostService.get] Query result:', {
+      total: response.data.total,
+      itemsCount: response.data.items?.length,
+      firstItem: response.data.items?.[0]?.metadata?.name,
     });
     const post = response.data.items?.[0];
     if (!post) {
@@ -52,10 +58,13 @@ export class PostService {
   }
 
   async exists(name: string): Promise<boolean> {
+    console.log('[PostService.exists] Checking if post exists:', name);
     try {
       await this.get(name);
+      console.log('[PostService.exists] Post exists:', name);
       return true;
-    } catch {
+    } catch (error) {
+      console.log('[PostService.exists] Post not found:', name, error);
       return false;
     }
   }

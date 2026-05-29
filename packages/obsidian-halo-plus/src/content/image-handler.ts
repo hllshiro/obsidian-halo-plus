@@ -87,16 +87,24 @@ export class ImageHandler {
     // 如果是上传模式，验证现有缓存中的附件是否仍然存在
     const validCacheEntries = new Map<string, ImageCacheEntry>();
     if (mode === 'upload' && client && existingImageCache && existingImageCache.length > 0) {
+      console.log(`[ImageHandler] Validating ${existingImageCache.length} cached images...`);
       const attachmentService = new AttachmentService(client);
       for (const entry of existingImageCache) {
         try {
+          console.log(`[ImageHandler] Validating attachment: ${entry.attachmentName}`);
           await attachmentService.get(entry.attachmentName);
           validCacheEntries.set(entry.localPath, entry);
           console.log(`[ImageHandler] Cache validated: ${entry.localPath} -> ${entry.permalink}`);
-        } catch {
-          console.log(`[ImageHandler] Cache invalid (attachment deleted): ${entry.localPath}`);
+        } catch (error) {
+          console.log(
+            `[ImageHandler] Cache invalid (attachment deleted or not accessible): ${entry.localPath}`,
+            error,
+          );
         }
       }
+      console.log(
+        `[ImageHandler] Validation complete: ${validCacheEntries.size}/${existingImageCache.length} valid`,
+      );
     }
 
     // 阶段一：解析所有图片路径，上传唯一文件
@@ -112,6 +120,7 @@ export class ImageHandler {
 
         // 已在本次处理中上传过，跳过
         if (uploadedMap.has(localPath)) {
+          console.log(`[ImageHandler] Already processed in this session: ${localPath}`);
           continue;
         }
 
@@ -132,6 +141,8 @@ export class ImageHandler {
           continue;
         }
 
+        console.log(`[ImageHandler] No valid cache found for: ${localPath}, will upload`);
+
         // 读取图片文件
         const imageBuffer = await this.app.vault.adapter.readBinary(localPath);
         const mimeType = this.getMimeType(localPath);
@@ -144,6 +155,7 @@ export class ImageHandler {
           const blob = new Blob([imageBuffer], { type: mimeType });
           const fileName = localPath.split('/').pop() || 'image.png';
           const attachmentService = new AttachmentService(client);
+          console.log(`[ImageHandler] Uploading: ${fileName}`);
           const result = await attachmentService.upload({
             file: blob,
             filename: fileName,

@@ -33,10 +33,15 @@ export class AttachmentService {
   }
 
   async get(name: string): Promise<HaloAttachment> {
+    console.log('[AttachmentService.get] Getting attachment:', name);
     const httpClient = this.client.getHttpClient();
     const response = await httpClient.get(
       `/apis/api.console.halo.run/v1alpha1/attachments/${name}`,
     );
+    console.log('[AttachmentService.get] Got attachment:', {
+      name: response.data?.metadata?.name,
+      displayName: response.data?.spec?.displayName,
+    });
     return response.data;
   }
 
