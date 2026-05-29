@@ -93,6 +93,7 @@ export class ImageHandler {
             file: blob,
             filename: fileName,
             mimeType: mimeType,
+            policyName: 'default',
           });
 
           // 记录已上传的文件
