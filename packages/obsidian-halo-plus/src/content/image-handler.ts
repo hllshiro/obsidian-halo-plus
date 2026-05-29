@@ -119,12 +119,7 @@ export class ImageHandler {
 
     // Obsidian app:// 协议路径
     if (imgSrc.startsWith('app://')) {
-      // 尝试从 app:// 路径提取真实路径
-      const match = imgSrc.match(/app:\/\/[^/]+\/(.+)/);
-      if (match) {
-        return match[1];
-      }
-      return null;
+      return this.getAbsolutePathFromObsidianSrc(imgSrc);
     }
 
     // 标准相对路径
@@ -142,6 +137,25 @@ export class ImageHandler {
     }
 
     return null;
+  }
+
+  /**
+   * 从 Obsidian app:// 协议路径解析绝对路径
+   *
+   * app:// 协议格式: app://<vault-id>/<path>
+   * 例如: app://68eceeb027539fc12f280ea51829b8c7957a/D:/Data/Notes/hllcloud.cn/Pasted%20image.png?1779936055537
+   *
+   * @returns vault 内的绝对路径
+   */
+  private getAbsolutePathFromObsidianSrc(src: string): string | null {
+    try {
+      const url = new URL(src);
+      // decode URI，并去掉 pathname 前面的 /
+      return decodeURIComponent(url.pathname).replace(/^\/+/, '');
+    } catch (error) {
+      console.error(`[ImageHandler] Failed to parse app:// path: ${src}`, error);
+      return null;
+    }
   }
 
   /**
