@@ -261,8 +261,8 @@ export class PublishPreviewModal extends Modal {
       cls: 'halo-plus-btn halo-plus-btn-publish mod-cta',
     });
 
-    // Loading 容器（按钮行下方，独立行）
-    const loadingContainer = buttonSection.createDiv({
+    // Loading 容器（独立于按钮区域，确保在按钮下方）
+    const loadingContainer = container.createDiv({
       cls: 'halo-plus-publish-loading-container',
     });
 
