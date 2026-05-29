@@ -28,6 +28,7 @@ Internal dependency: plugin and CLI both depend on `halo-sdk` via `workspace:*`.
 | Lint | `pnpm lint` |
 | Lint + auto-fix | `pnpm lint:fix` |
 | Format | `pnpm format` |
+| Release | `pnpm release <version>` (e.g. `pnpm release 0.4.0`) |
 
 **No test suite exists.** CI references `pnpm test` but no test script is defined — it will fail if run.
 
@@ -76,7 +77,6 @@ Update version in both `package.json` and `manifest.json` before tagging.
 - `packages/obsidian-halo-plus/esbuild.config.mjs` — plugin bundler config
 - `manifest.json` and `versions.json` (root) — Obsidian plugin metadata, maintained directly at repo root
 - `biome.json` — lint/format config
-- `.env.example` — test env vars (`VITE_HALO_TEST_URL`, `VITE_HALO_TEST_TOKEN`)
 
 ## Gotchas
 
@@ -85,3 +85,4 @@ Update version in both `package.json` and `manifest.json` before tagging.
 - `.gitignore` excludes `*.js` at root but explicitly allows specific files via negation patterns — check before adding new `.js` files.
 - `test.sh` is a local-only deploy script (hardcoded Windows/WSL path), not a test suite.
 - `reference/` and `.omo/` directories are internal/planning — excluded from git.
+- **Pre-commit hook** runs `pnpm lint:fix && git add -u` automatically. Staged files get auto-fixed and re-staged.

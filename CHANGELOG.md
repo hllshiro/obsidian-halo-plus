@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+- 移除未使用的 `.env.example` 文件（其中变量未被任何代码引用）
+
+### Changed
+- 更新 `AGENTS.md`：补充 `pnpm release` 命令、pre-commit hook 行为说明，修正环境变量描述
+
 ## [0.3.1] - 2026-05-29
 
 ### Fixed
