@@ -55,23 +55,22 @@ export class ImageHandler {
 
     // 去重：记录已上传的文件路径和对应的 permalink
     const uploadedMap = new Map<string, string>();
+    // 记录每个 <img> 元素对应的本地路径
+    const imgPathMap = new Map<Element, string>();
 
+    // 阶段一：解析所有图片路径，上传唯一文件
     for (const img of localImages) {
       const src = img.getAttribute('src');
       if (!src) continue;
 
       try {
-        // 解析图片路径
         const localPath = await this.resolveImagePath(src, currentFile);
         if (!localPath) continue;
 
-        // 检查是否已上传过
+        imgPathMap.set(img, localPath);
+
+        // 已上传过，跳过
         if (uploadedMap.has(localPath)) {
-          const permalink = uploadedMap.get(localPath);
-          if (permalink) {
-            img.setAttribute('src', permalink);
-            console.log(`[ImageHandler] Skipped (deduplicated): ${localPath}`);
-          }
           continue;
         }
 
@@ -80,12 +79,10 @@ export class ImageHandler {
         const mimeType = this.getMimeType(localPath);
 
         if (mode === 'upload' && client) {
-          // Loading: 正在上传附件
           if (loading) {
             loading.updateText(`正在上传附件 (${uploadedCount + 1}/${localImages.length})`);
           }
 
-          // 上传到 Halo
           const blob = new Blob([imageBuffer], { type: mimeType });
           const fileName = localPath.split('/').pop() || 'image.png';
           const attachmentService = new AttachmentService(client);
@@ -95,23 +92,26 @@ export class ImageHandler {
             mimeType: mimeType,
           });
 
-          // 记录已上传的文件
           const permalink = result.status?.permalink;
           uploadedMap.set(localPath, permalink);
-
-          // 替换为 permalink
-          img.setAttribute('src', permalink || '');
           uploadedCount++;
 
           console.log(`[ImageHandler] Uploaded: ${fileName} -> ${permalink}`);
         } else {
-          // Base64 内嵌
           const base64 = await this.imageToBase64(imageBuffer, mimeType, quality);
-          img.setAttribute('src', `data:${mimeType};base64,${base64}`);
+          uploadedMap.set(localPath, `data:${mimeType};base64,${base64}`);
         }
       } catch (error) {
         console.error(`[ImageHandler] Failed to process image: ${src}`, error);
         errors.push({ src, error });
+      }
+    }
+
+    // 阶段二：统一替换所有 <img> 的 src（同文件的所有引用都会被替换）
+    for (const [img, localPath] of imgPathMap) {
+      const permalink = uploadedMap.get(localPath);
+      if (permalink) {
+        img.setAttribute('src', permalink);
       }
     }
 
