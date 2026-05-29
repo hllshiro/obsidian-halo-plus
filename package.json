@@ -13,7 +13,8 @@
     "format": "biome format . --write",
     "dev": "pnpm -r run dev",
     "clean": "pnpm -r run clean",
-    "prepare": "husky"
+    "prepare": "husky",
+    "release": "node scripts/release.js"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.5.3",
