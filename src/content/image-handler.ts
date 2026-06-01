@@ -92,9 +92,9 @@ export class ImageHandler {
       for (const entry of existingImageCache) {
         try {
           console.log(`[ImageHandler] Validating attachment: ${entry.attachmentName}`);
-          await client.httpClient.get(
-            `/apis/api.console.halo.run/v1alpha1/attachments/${entry.attachmentName}`,
-          );
+          await client.coreApi.storage.attachment.getAttachment({
+            name: entry.attachmentName,
+          });
           validCacheEntries.set(entry.localPath, entry);
           console.log(`[ImageHandler] Cache validated: ${entry.localPath} -> ${entry.permalink}`);
         } catch (error) {
