@@ -1,5 +1,6 @@
-import { AttachmentService, type HaloClient } from '@obsidian-halo-plus/halo-sdk';
 import { type App, TFile } from 'obsidian';
+import type { HaloClient } from '../halo-client';
+import type { HaloAttachment } from '../types';
 import type { PublishLoading } from '../ui/publish-loading';
 import type { ImageCacheEntry } from './frontmatter-parser';
 
@@ -88,11 +89,12 @@ export class ImageHandler {
     const validCacheEntries = new Map<string, ImageCacheEntry>();
     if (mode === 'upload' && client && existingImageCache && existingImageCache.length > 0) {
       console.log(`[ImageHandler] Validating ${existingImageCache.length} cached images...`);
-      const attachmentService = new AttachmentService(client);
       for (const entry of existingImageCache) {
         try {
           console.log(`[ImageHandler] Validating attachment: ${entry.attachmentName}`);
-          await attachmentService.get(entry.attachmentName);
+          await client.httpClient.get(
+            `/apis/api.console.halo.run/v1alpha1/attachments/${entry.attachmentName}`,
+          );
           validCacheEntries.set(entry.localPath, entry);
           console.log(`[ImageHandler] Cache validated: ${entry.localPath} -> ${entry.permalink}`);
         } catch (error) {
@@ -154,13 +156,16 @@ export class ImageHandler {
 
           const blob = new Blob([imageBuffer], { type: mimeType });
           const fileName = localPath.split('/').pop() || 'image.png';
-          const attachmentService = new AttachmentService(client);
           console.log(`[ImageHandler] Uploading: ${fileName}`);
-          const result = await attachmentService.upload({
-            file: blob,
-            filename: fileName,
-            mimeType: mimeType,
-          });
+
+          const formData = new FormData();
+          formData.append('file', blob, fileName);
+          const uploadResponse = await client.httpClient.post(
+            '/apis/console.api.storage.halo.run/v1alpha1/attachments/-/upload',
+            formData,
+            { headers: { 'Content-Type': 'multipart/form-data' } },
+          );
+          const result = uploadResponse.data as HaloAttachment;
 
           const permalink = result.status?.permalink;
           const attachmentName = result.metadata?.name;

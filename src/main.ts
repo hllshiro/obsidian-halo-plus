@@ -1,4 +1,4 @@
-import { HaloClient, type HaloPost, PostService } from '@obsidian-halo-plus/halo-sdk';
+import type { Post as ApiPost, PostSpec as ApiPostSpec } from '@halo-dev/api-client';
 import { Component, Notice, Plugin, TFile } from 'obsidian';
 import {
   type ImageCacheEntry,
@@ -7,8 +7,10 @@ import {
   stringifyFrontMatter,
 } from './content/frontmatter-parser';
 import { ImageHandler } from './content/image-handler';
+import { createHaloClient, validateConnection } from './halo-client';
 import { i18n, t } from './i18n';
 import { PreviewRenderer } from './renderer/preview-renderer';
+import type { HaloContent, HaloPost } from './types';
 import type { PublishLoading } from './ui/publish-loading';
 import { PublishPreviewModal } from './ui/publish-preview-modal';
 import { SettingsTab } from './ui/settings-tab';
@@ -192,12 +194,12 @@ export default class HaloPlusPlugin extends Plugin {
     loading: PublishLoading,
   ): Promise<void> {
     try {
-      const client = new HaloClient({
+      const client = createHaloClient({
         baseUrl: site.url,
         token: site.token,
       });
 
-      const isConnected = await client.validateConnection();
+      const isConnected = await validateConnection(client);
       if (!isConnected) {
         new Notice(t('notices.connectionFailed'));
         return;
@@ -249,7 +251,6 @@ export default class HaloPlusPlugin extends Plugin {
         loading.updateText('正在发布文章...');
         console.log('[doPublish] Publishing article...');
 
-        const postService = new PostService(client);
         let post: HaloPost | undefined;
         const effectiveTitle = (frontmatter.title as string) || file.basename;
         const effectiveSlug = (frontmatter.slug as string) || generateSlug(effectiveTitle);
@@ -265,13 +266,20 @@ export default class HaloPlusPlugin extends Plugin {
             currentFrontmatter.halo.name,
           );
           try {
-            existingPost = await postService.get(currentFrontmatter.halo.name);
+            const getResponse = await client.httpClient.get(
+              `/apis/uc.api.content.halo.run/v1alpha1/posts/${currentFrontmatter.halo.name}`,
+            );
+            existingPost = getResponse.data as HaloPost;
             console.log('[doPublish] Successfully fetched existing post');
 
             // 检查文章是否在回收站中
             if (existingPost.spec.deleted) {
               console.log('[doPublish] Post is in recycle bin, restoring...');
-              existingPost = await postService.restore(currentFrontmatter.halo.name);
+              const restoreResponse = await client.coreApi.content.post.patchPost({
+                name: currentFrontmatter.halo.name,
+                jsonPatchInner: [{ op: 'add', path: '/spec/deleted', value: false }],
+              });
+              existingPost = restoreResponse.data as HaloPost;
               console.log('[doPublish] Successfully restored post from recycle bin');
             }
           } catch (error) {
@@ -288,39 +296,100 @@ export default class HaloPlusPlugin extends Plugin {
         if (existingPost) {
           // 更新已有文章
           console.log('[doPublish] Updating existing post:', existingPost.metadata.name);
-          post = await postService.update(existingPost.metadata.name, {
-            title: effectiveTitle,
-            slug: effectiveSlug,
-            tags: currentFrontmatter.tags as string[],
-            categories: currentFrontmatter.categories as string[],
-            cover: currentFrontmatter.cover as string,
-            excerpt: currentFrontmatter.excerpt as string,
-          });
 
-          await postService.updateContent(existingPost.metadata.name, {
+          // GET + merge + PUT（Halo API 要求完整对象）
+          const existingResponse = await client.httpClient.get(
+            `/apis/uc.api.content.halo.run/v1alpha1/posts/${existingPost.metadata.name}`,
+          );
+          const existing = existingResponse.data;
+          const postToUpdate = {
+            ...existing,
+            spec: {
+              ...existing.spec,
+              title: effectiveTitle,
+              slug: effectiveSlug,
+              cover: (currentFrontmatter.cover as string) ?? existing.spec.cover,
+              excerpt: currentFrontmatter.excerpt
+                ? { autoGenerate: true, raw: currentFrontmatter.excerpt as string }
+                : existing.spec.excerpt,
+              categories: (currentFrontmatter.categories as string[]) ?? existing.spec.categories,
+              tags: (currentFrontmatter.tags as string[]) ?? existing.spec.tags,
+            },
+          };
+          const updateResponse = await client.httpClient.put(
+            `/apis/uc.api.content.halo.run/v1alpha1/posts/${existingPost.metadata.name}`,
+            postToUpdate,
+          );
+          post = updateResponse.data as HaloPost;
+
+          // 更新内容（GET draft → 注入 annotation → PUT）
+          const draftResponse = await client.httpClient.get(
+            `/apis/uc.api.content.halo.run/v1alpha1/posts/${existingPost.metadata.name}/draft?patched=true`,
+          );
+          const snapshot = draftResponse.data;
+          const contentData: HaloContent = {
+            rawType: 'HTML',
             raw: processedHTML,
             content: processedHTML,
-            rawType: 'HTML',
-          });
+          };
+          snapshot.metadata.annotations = {
+            ...snapshot.metadata.annotations,
+            'content.halo.run/content-json': JSON.stringify(contentData),
+          };
+          await client.httpClient.put(
+            `/apis/uc.api.content.halo.run/v1alpha1/posts/${existingPost.metadata.name}/draft`,
+            snapshot,
+          );
 
           if (this.settings.publishBehavior.publishByDefault) {
-            await postService.publish(existingPost.metadata.name);
+            await client.httpClient.put(
+              `/apis/uc.api.content.halo.run/v1alpha1/posts/${existingPost.metadata.name}/publish`,
+            );
           }
 
           console.log(`[doPublish] Article updated: ${effectiveTitle}`);
         } else {
-          // 创建新文章
+          // 创建新文章（客户端生成 UUID，通过 annotation 注入内容）
           console.log('[doPublish] Creating new post');
-          post = await postService.create({
-            title: effectiveTitle,
-            slug: effectiveSlug,
-            tags: currentFrontmatter.tags as string[],
-            categories: currentFrontmatter.categories as string[],
-            cover: currentFrontmatter.cover as string,
-            excerpt: currentFrontmatter.excerpt as string,
-            publish: this.settings.publishBehavior.publishByDefault,
+          const postName = crypto.randomUUID();
+          const contentData: HaloContent = {
+            rawType: 'HTML',
+            raw: processedHTML,
             content: processedHTML,
-          });
+          };
+          const newPost: ApiPost = {
+            apiVersion: 'content.halo.run/v1alpha1',
+            kind: 'Post',
+            metadata: {
+              name: postName,
+              annotations: {
+                'content.halo.run/content-json': JSON.stringify(contentData),
+              },
+            },
+            spec: {
+              title: effectiveTitle,
+              slug: effectiveSlug,
+              cover: (currentFrontmatter.cover as string) || '',
+              deleted: false,
+              publish: this.settings.publishBehavior.publishByDefault,
+              pinned: false,
+              allowComment: true,
+              visible: 'PUBLIC' as ApiPostSpec['visible'],
+              priority: 0,
+              excerpt: {
+                autoGenerate: true,
+                raw: (currentFrontmatter.excerpt as string) || '',
+              },
+              categories: (currentFrontmatter.categories as string[]) || [],
+              tags: (currentFrontmatter.tags as string[]) || [],
+              htmlMetas: [],
+            },
+          };
+          const createResponse = await client.httpClient.post(
+            '/apis/uc.api.content.halo.run/v1alpha1/posts',
+            newPost,
+          );
+          post = createResponse.data as HaloPost;
 
           console.log(`[doPublish] Article created: ${effectiveTitle}`);
         }
@@ -373,13 +442,12 @@ export default class HaloPlusPlugin extends Plugin {
     }
 
     try {
-      const client = new HaloClient({
+      const client = createHaloClient({
         baseUrl: site.url,
         token: site.token,
       });
 
-      const postService = new PostService(client);
-      await postService.delete(frontmatter.halo.name);
+      await client.consoleApi.content.post.recyclePost({ name: frontmatter.halo.name });
 
       // 清除 FrontMatter 中的 halo 字段
       await this.updateFrontMatter(file, {

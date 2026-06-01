@@ -8,10 +8,9 @@ build/
 *.js
 *.mjs
 *.d.ts
-!packages/*/src/**/*.ts
-!packages/halo-cli/src/index.ts
-!packages/obsidian-halo-plus/esbuild.config.mjs
-!packages/obsidian-halo-plus/version-bump.mjs
+!src/**/*.ts
+!esbuild.config.mjs
+!version-bump.mjs
 !scripts/*.js
 
 # Environment variables

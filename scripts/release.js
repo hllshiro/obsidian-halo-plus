@@ -53,21 +53,21 @@ if (fs.existsSync(versionsPath)) {
   process.exit(1);
 }
 
-// 更新 packages/obsidian-halo-plus/package.json
-const pluginPackagePath = path.join(projectRoot, 'packages', 'obsidian-halo-plus', 'package.json');
-if (fs.existsSync(pluginPackagePath)) {
-  const pluginPackage = JSON.parse(fs.readFileSync(pluginPackagePath, 'utf8'));
-  pluginPackage.version = version;
-  fs.writeFileSync(pluginPackagePath, JSON.stringify(pluginPackage, null, 2) + '\n');
-  console.log(`✓ 更新 packages/obsidian-halo-plus/package.json 版本号为 ${version}`);
+// 更新 package.json
+const rootPackagePath = path.join(projectRoot, 'package.json');
+if (fs.existsSync(rootPackagePath)) {
+  const rootPackage = JSON.parse(fs.readFileSync(rootPackagePath, 'utf8'));
+  rootPackage.version = version;
+  fs.writeFileSync(rootPackagePath, JSON.stringify(rootPackage, null, 2) + '\n');
+  console.log(`✓ 更新 package.json 版本号为 ${version}`);
 } else {
-  console.error('错误: packages/obsidian-halo-plus/package.json 不存在');
+  console.error('错误: package.json 不存在');
   process.exit(1);
 }
 
 // 创建 git commit
 try {
-  execSync('git add manifest.json versions.json packages/obsidian-halo-plus/package.json', { cwd: projectRoot });
+  execSync('git add manifest.json versions.json package.json', { cwd: projectRoot });
   execSync(`git commit -m "chore(release): ${version}"`, { cwd: projectRoot });
   console.log(`✓ 创建 git commit: chore(release): ${version}`);
 } catch (error) {

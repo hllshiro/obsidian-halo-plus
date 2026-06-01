@@ -24,8 +24,8 @@ echo "正在构建..."
 pnpm build
 
 echo "正在复制文件..."
-cp packages/obsidian-halo-plus/dist/main.js "$DEPLOY_TARGET_DIR/"
-cp packages/obsidian-halo-plus/dist/styles.css "$DEPLOY_TARGET_DIR/"
+cp dist/main.js "$DEPLOY_TARGET_DIR/"
+cp dist/styles.css "$DEPLOY_TARGET_DIR/"
 cp manifest.json "$DEPLOY_TARGET_DIR/"
 
 echo "完成！文件已部署到：$DEPLOY_TARGET_DIR"

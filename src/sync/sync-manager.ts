@@ -1,4 +1,4 @@
-import { HaloClient, type HaloPost, PostService } from '@obsidian-halo-plus/halo-sdk';
+import type { Post as ApiPost, PostSpec as ApiPostSpec } from '@halo-dev/api-client';
 import { type App, Component, type TFile } from 'obsidian';
 import {
   type ImageCacheEntry,
@@ -7,8 +7,10 @@ import {
   stringifyFrontMatter,
 } from '../content/frontmatter-parser';
 import { ImageHandler } from '../content/image-handler';
+import { createHaloClient, validateConnection } from '../halo-client';
 import type HaloPlusPlugin from '../main';
 import { PreviewRenderer } from '../renderer/preview-renderer';
+import type { HaloContent, HaloPost } from '../types';
 
 export class SyncManager {
   private app: App;
@@ -34,12 +36,12 @@ export class SyncManager {
         throw new Error('No Halo site configured');
       }
 
-      const client = new HaloClient({
+      const client = createHaloClient({
         baseUrl: site.url,
         token: site.token,
       });
 
-      const isConnected = await client.validateConnection();
+      const isConnected = await validateConnection(client);
       if (!isConnected) {
         throw new Error('Failed to connect to Halo server');
       }
@@ -70,7 +72,6 @@ export class SyncManager {
         const processedHTML = imageResult.html;
         const updatedImageCache = imageResult.imageCache;
 
-        const postService = new PostService(client);
         let post: HaloPost | undefined;
         const effectiveTitle = frontmatter.title || file.basename;
         const effectiveSlug = frontmatter.slug || generateSlug(effectiveTitle);
@@ -82,13 +83,20 @@ export class SyncManager {
             `[SyncManager] Found existing halo name, trying to fetch: ${frontmatter.halo.name}`,
           );
           try {
-            existingPost = await postService.get(frontmatter.halo.name);
+            const getResponse = await client.httpClient.get(
+              `/apis/uc.api.content.halo.run/v1alpha1/posts/${frontmatter.halo.name}`,
+            );
+            existingPost = getResponse.data as HaloPost;
             console.log('[SyncManager] Successfully fetched existing post');
 
             // 检查文章是否在回收站中
             if (existingPost.spec.deleted) {
               console.log('[SyncManager] Post is in recycle bin, restoring...');
-              existingPost = await postService.restore(frontmatter.halo.name);
+              const restoreResponse = await client.coreApi.content.post.patchPost({
+                name: frontmatter.halo.name,
+                jsonPatchInner: [{ op: 'add', path: '/spec/deleted', value: false }],
+              });
+              existingPost = restoreResponse.data as HaloPost;
               console.log('[SyncManager] Successfully restored post from recycle bin');
             }
           } catch (error) {
@@ -105,37 +113,98 @@ export class SyncManager {
         if (existingPost) {
           // 更新已有文章
           console.log('[SyncManager] Updating existing post:', existingPost.metadata.name);
-          post = await postService.update(existingPost.metadata.name, {
-            title: effectiveTitle,
-            slug: effectiveSlug,
-            tags: frontmatter.tags,
-            categories: frontmatter.categories,
-            cover: frontmatter.cover,
-            excerpt: frontmatter.excerpt,
-          });
 
-          await postService.updateContent(existingPost.metadata.name, {
+          // GET + merge + PUT（Halo API 要求完整对象）
+          const existingResponse = await client.httpClient.get(
+            `/apis/uc.api.content.halo.run/v1alpha1/posts/${existingPost.metadata.name}`,
+          );
+          const existing = existingResponse.data;
+          const postToUpdate = {
+            ...existing,
+            spec: {
+              ...existing.spec,
+              title: effectiveTitle,
+              slug: effectiveSlug,
+              cover: frontmatter.cover ?? existing.spec.cover,
+              excerpt: frontmatter.excerpt
+                ? { autoGenerate: true, raw: frontmatter.excerpt }
+                : existing.spec.excerpt,
+              categories: frontmatter.categories ?? existing.spec.categories,
+              tags: frontmatter.tags ?? existing.spec.tags,
+            },
+          };
+          const updateResponse = await client.httpClient.put(
+            `/apis/uc.api.content.halo.run/v1alpha1/posts/${existingPost.metadata.name}`,
+            postToUpdate,
+          );
+          post = updateResponse.data as HaloPost;
+
+          // 更新内容（GET draft → 注入 annotation → PUT）
+          const draftResponse = await client.httpClient.get(
+            `/apis/uc.api.content.halo.run/v1alpha1/posts/${existingPost.metadata.name}/draft?patched=true`,
+          );
+          const snapshot = draftResponse.data;
+          const contentData: HaloContent = {
+            rawType: 'HTML',
             raw: processedHTML,
             content: processedHTML,
-            rawType: 'HTML',
-          });
+          };
+          snapshot.metadata.annotations = {
+            ...snapshot.metadata.annotations,
+            'content.halo.run/content-json': JSON.stringify(contentData),
+          };
+          await client.httpClient.put(
+            `/apis/uc.api.content.halo.run/v1alpha1/posts/${existingPost.metadata.name}/draft`,
+            snapshot,
+          );
 
           if (this.plugin.settings.publishBehavior.publishByDefault) {
-            await postService.publish(existingPost.metadata.name);
+            await client.httpClient.put(
+              `/apis/uc.api.content.halo.run/v1alpha1/posts/${existingPost.metadata.name}/publish`,
+            );
           }
         } else {
-          // 创建新文章
+          // 创建新文章（客户端生成 UUID，通过 annotation 注入内容）
           console.log('[SyncManager] Creating new post');
-          post = await postService.create({
-            title: effectiveTitle,
-            slug: effectiveSlug,
-            tags: frontmatter.tags,
-            categories: frontmatter.categories,
-            cover: frontmatter.cover,
-            excerpt: frontmatter.excerpt,
-            publish: this.plugin.settings.publishBehavior.publishByDefault,
+          const postName = crypto.randomUUID();
+          const contentData: HaloContent = {
+            rawType: 'HTML',
+            raw: processedHTML,
             content: processedHTML,
-          });
+          };
+          const newPost: ApiPost = {
+            apiVersion: 'content.halo.run/v1alpha1',
+            kind: 'Post',
+            metadata: {
+              name: postName,
+              annotations: {
+                'content.halo.run/content-json': JSON.stringify(contentData),
+              },
+            },
+            spec: {
+              title: effectiveTitle,
+              slug: effectiveSlug,
+              cover: frontmatter.cover || '',
+              deleted: false,
+              publish: this.plugin.settings.publishBehavior.publishByDefault,
+              pinned: false,
+              allowComment: true,
+              visible: 'PUBLIC' as ApiPostSpec['visible'],
+              priority: 0,
+              excerpt: {
+                autoGenerate: true,
+                raw: frontmatter.excerpt || '',
+              },
+              categories: frontmatter.categories || [],
+              tags: frontmatter.tags || [],
+              htmlMetas: [],
+            },
+          };
+          const createResponse = await client.httpClient.post(
+            '/apis/uc.api.content.halo.run/v1alpha1/posts',
+            newPost,
+          );
+          post = createResponse.data as HaloPost;
         }
 
         if (post) {

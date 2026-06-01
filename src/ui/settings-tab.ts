@@ -1,6 +1,7 @@
 import { type App, Modal, Notice, PluginSettingTab, Setting } from 'obsidian';
 import { t } from '../i18n';
 import type HaloPlusPlugin from '../main';
+import type { HaloSite } from '../main';
 
 /**
  * 设置面板
