@@ -75,27 +75,30 @@ export class SyncManager {
         const effectiveTitle = frontmatter.title || file.basename;
         const effectiveSlug = frontmatter.slug || generateSlug(effectiveTitle);
 
-        // 检查是否是更新操作
-        let isUpdate = false;
+        // 参考官方插件：先尝试获取远端文章，失败则新建
+        let existingPost: HaloPost | undefined;
         if (frontmatter.halo?.name) {
-          // 验证文章是否真的存在于 Halo 中
-          const postExists = await postService.exists(frontmatter.halo.name);
-          if (postExists) {
-            isUpdate = true;
-          } else {
+          console.log(
+            `[SyncManager] Found existing halo name, trying to fetch: ${frontmatter.halo.name}`,
+          );
+          try {
+            existingPost = await postService.get(frontmatter.halo.name);
+            console.log('[SyncManager] Successfully fetched existing post');
+          } catch (error) {
+            console.log('[SyncManager] Failed to fetch post, will create new one:', error);
+            existingPost = undefined;
             // 文章已被删除，清除本地 halo 信息
-            console.log(
-              `[SyncManager] Post ${frontmatter.halo.name} not found in Halo, will create new post`,
-            );
             await this.updateFrontMatter(file, { halo: undefined });
             frontmatter = { ...frontmatter, halo: undefined };
           }
+        } else {
+          console.log('[SyncManager] No existing halo name found, will create new post');
         }
 
-        const haloName = frontmatter.halo?.name;
-
-        if (isUpdate && haloName) {
-          post = await postService.update(haloName, {
+        if (existingPost) {
+          // 更新已有文章
+          console.log('[SyncManager] Updating existing post:', existingPost.metadata.name);
+          post = await postService.update(existingPost.metadata.name, {
             title: effectiveTitle,
             slug: effectiveSlug,
             tags: frontmatter.tags,
@@ -104,16 +107,18 @@ export class SyncManager {
             excerpt: frontmatter.excerpt,
           });
 
-          await postService.updateContent(haloName, {
+          await postService.updateContent(existingPost.metadata.name, {
             raw: processedHTML,
             content: processedHTML,
             rawType: 'HTML',
           });
 
           if (this.plugin.settings.publishBehavior.publishByDefault) {
-            await postService.publish(haloName);
+            await postService.publish(existingPost.metadata.name);
           }
         } else {
+          // 创建新文章
+          console.log('[SyncManager] Creating new post');
           post = await postService.create({
             title: effectiveTitle,
             slug: effectiveSlug,

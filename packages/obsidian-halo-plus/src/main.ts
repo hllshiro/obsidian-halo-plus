@@ -257,25 +257,20 @@ export default class HaloPlusPlugin extends Plugin {
         // 使用局部变量避免参数重赋值
         let currentFrontmatter = frontmatter;
 
-        // 检查是否是更新操作
-        let isUpdate = false;
-        console.log('[doPublish] Frontmatter halo info:', currentFrontmatter.halo);
+        // 参考官方插件：先尝试获取远端文章，失败则新建
+        let existingPost: HaloPost | undefined;
         if (currentFrontmatter.halo?.name) {
           console.log(
-            '[doPublish] Found existing halo name, checking if post exists:',
+            '[doPublish] Found existing halo name, trying to fetch from remote:',
             currentFrontmatter.halo.name,
           );
-          // 验证文章是否真的存在于 Halo 中
-          const postExists = await postService.exists(currentFrontmatter.halo.name as string);
-          console.log('[doPublish] Post exists check result:', postExists);
-          if (postExists) {
-            isUpdate = true;
-            console.log('[doPublish] Will update existing post');
-          } else {
+          try {
+            existingPost = await postService.get(currentFrontmatter.halo.name);
+            console.log('[doPublish] Successfully fetched existing post');
+          } catch (error) {
+            console.log('[doPublish] Failed to fetch post, will create new one:', error);
+            existingPost = undefined;
             // 文章已被删除，清除本地 halo 信息
-            console.log(
-              `[doPublish] Post ${currentFrontmatter.halo.name} not found in Halo, will create new post`,
-            );
             await this.updateFrontMatter(file, { halo: undefined });
             currentFrontmatter = { ...currentFrontmatter, halo: undefined };
           }
@@ -283,12 +278,10 @@ export default class HaloPlusPlugin extends Plugin {
           console.log('[doPublish] No existing halo name found, will create new post');
         }
 
-        const haloName = currentFrontmatter.halo?.name as string | undefined;
-        console.log('[doPublish] Final decision:', { isUpdate, haloName });
-
-        if (isUpdate && haloName) {
-          console.log('[doPublish] Calling postService.update with name:', haloName);
-          post = await postService.update(haloName, {
+        if (existingPost) {
+          // 更新已有文章
+          console.log('[doPublish] Updating existing post:', existingPost.metadata.name);
+          post = await postService.update(existingPost.metadata.name, {
             title: effectiveTitle,
             slug: effectiveSlug,
             tags: currentFrontmatter.tags as string[],
@@ -297,18 +290,20 @@ export default class HaloPlusPlugin extends Plugin {
             excerpt: currentFrontmatter.excerpt as string,
           });
 
-          await postService.updateContent(haloName, {
+          await postService.updateContent(existingPost.metadata.name, {
             raw: processedHTML,
             content: processedHTML,
             rawType: 'HTML',
           });
 
           if (this.settings.publishBehavior.publishByDefault) {
-            await postService.publish(haloName);
+            await postService.publish(existingPost.metadata.name);
           }
 
           console.log(`[doPublish] Article updated: ${effectiveTitle}`);
         } else {
+          // 创建新文章
+          console.log('[doPublish] Creating new post');
           post = await postService.create({
             title: effectiveTitle,
             slug: effectiveSlug,
