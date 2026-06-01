@@ -2,53 +2,30 @@
 
 ## Project Overview
 
-Obsidian plugin that publishes notes to Halo blog with native rendering (Dataview, Tasks, Callout, etc.). Monorepo with 3 packages managed by pnpm workspaces.
-
-## Monorepo Structure
-
-```
-packages/
-  halo-sdk/           # @obsidian-halo-plus/halo-sdk — wraps @halo-dev/api-client
-  obsidian-halo-plus/ # Main Obsidian plugin (entry: src/main.ts)
-  halo-cli/           # @obsidian-halo-plus/halo-cli — CLI tool
-```
-
-Internal dependency: plugin and CLI both depend on `halo-sdk` via `workspace:*`.
+Single-package Obsidian plugin (`halo-plus`) that publishes notes to Halo blog with native rendering (Dataview, Tasks, Callout, etc.). Entry point: `src/main.ts` → exports `HaloPlusPlugin`.
 
 ## Commands
 
 | Task | Command |
 |------|---------|
 | Install deps | `pnpm install` |
-| Build all | `pnpm build` |
-| Build SDK only | `pnpm build:sdk` |
-| Build plugin only | `pnpm build:plugin` |
-| Build CLI only | `pnpm build:cli` |
+| Build (production) | `pnpm build` |
 | Dev (watch mode) | `pnpm dev` |
 | Lint | `pnpm lint` |
 | Lint + auto-fix | `pnpm lint:fix` |
 | Format | `pnpm format` |
-| Release | `pnpm release <version>` (e.g. `pnpm release 0.4.0`) |
+| Deploy locally | `pnpm deploy:local` (requires `DEPLOY_TARGET_DIR` in `.env`) |
+| Release | `node scripts/release.js <version>` (e.g. `node scripts/release.js 0.4.0`) |
 
-**No test suite exists.** CI references `pnpm test` but no test script is defined — it will fail if run.
+**No test suite.** Do not run `pnpm test` — no script is defined.
 
 ## Build Toolchain
 
-- **esbuild** for all bundling (not tsc). Each package has its own esbuild invocation in `package.json` scripts.
-- **Biome** for lint + format (not ESLint/Prettier). Config at `biome.json`.
-- TypeScript is used for type-checking only; esbuild handles transpilation.
-
-### Plugin Build Specifics
-
-- Entry: `packages/obsidian-halo-plus/src/main.ts`
-- Output: `packages/obsidian-halo-plus/dist/main.js` (CJS, es2018 target)
-- Externalized: `obsidian`, `electron`, all `@codemirror/*`, `@lezer/*`
-- `styles.css` is copied to `dist/` during build (not bundled)
-
-### SDK Build Specifics
-
-- Produces dual CJS (`dist/index.js`) and ESM (`dist/index.mjs`) outputs
-- Externalizes `@halo-dev/api-client` and `axios` (peer/runtime deps)
+- **esbuild** bundles `src/main.ts` → `dist/main.js` (CJS, es2018). Config: `esbuild.config.mjs`
+- **Biome** for lint + format (not ESLint/Prettier). Config: `biome.json`
+- TypeScript is type-check only; esbuild handles transpilation. No `tsc` build step.
+- `styles.css` is copied to `dist/` during build (not bundled).
+- Externals: `obsidian`, `electron`, all `@codemirror/*`, `@lezer/*`, Node builtins
 
 ## Lint Rules (Biome)
 
@@ -56,33 +33,58 @@ Internal dependency: plugin and CLI both depend on `halo-sdk` via `workspace:*`.
 - `noUnusedImports` / `noUnusedVariables`: warn
 - `noNonNullAssertion`: warn
 - Single quotes, trailing commas, 2-space indent, 100 char line width
-- `biome.json` ignores `*.js`, `*.mjs`, `*.d.ts` files (only lints `.ts`)
+- Only lints `.ts` files (ignores `*.js`, `*.mjs`, `*.d.ts`)
+
+## Pre-commit Hook
+
+Husky pre-commit runs `biome check --write --staged` — auto-fixes and re-stages linted files. No manual `git add` needed after lint:fix.
+
+## Source Structure
+
+```
+src/
+  main.ts                 # Plugin entry, exports HaloPlusPlugin (default export)
+  halo-client.ts          # createHaloClient() — wraps @halo-dev/api-client + axios
+  types.ts                # Shared types (HaloPost, HaloContent, etc.)
+  content/
+    frontmatter-parser.ts # parseFrontMatter / stringifyFrontMatter / generateSlug
+    image-handler.ts      # Image upload/base64 processing
+  renderer/
+    preview-renderer.ts   # Renders Obsidian note to HTML via headless component
+    html-cleaner.ts       # Post-render HTML cleanup
+  sync/
+    sync-manager.ts       # Sync logic
+    folder-watcher.ts     # File watcher for auto-sync
+  ui/
+    settings-tab.ts       # Plugin settings UI
+    publish-preview-modal.ts  # Pre-publish preview modal
+    publish-modal.ts      # Publish modal
+    publish-loading.ts    # Loading indicator
+    status-bar.ts         # Status bar widget
+  i18n/
+    index.ts              # i18n setup, uses Obsidian's getLanguage()
+    en.json / zh.json     # Translations
+```
 
 ## Release Process
 
-Triggered by git tags. Release workflow:
+`node scripts/release.js <version>` does:
+1. Validates version is `x.x.x` format (no `v` prefix — Obsidian rejects it)
+2. Updates `manifest.json`, `versions.json`, `package.json` in sync
+3. Commits as `chore(release): <version>`, creates git tag, pushes
 
-1. Validates version consistency: `packages/obsidian-halo-plus/package.json` version must match root `manifest.json` version and the git tag
-2. Builds all packages
-3. Publishes `main.js`, `manifest.json`, `styles.css` as GitHub Release assets
+Version must match across `manifest.json` and `package.json`.
 
-**Version Format:** Git tags and versions must be pure numeric `x.x.x` format (e.g., `1.0.0`). Do NOT prefix with `v`. Obsidian does not accept `v`-prefixed version strings.
+## Environment
 
-Update version in both `package.json` and `manifest.json` before tagging.
-
-## Key Files
-
-- `packages/obsidian-halo-plus/src/main.ts` — plugin entry, exports `HaloPlusPlugin`
-- `packages/halo-sdk/src/client.ts` — `HaloClient` class, wraps axios + @halo-dev/api-client
-- `packages/obsidian-halo-plus/esbuild.config.mjs` — plugin bundler config
-- `manifest.json` and `versions.json` (root) — Obsidian plugin metadata, maintained directly at repo root
-- `biome.json` — lint/format config
+`.env` (gitignored) for local dev only:
+- `DEPLOY_TARGET_DIR` — target path for `pnpm deploy:local`
 
 ## Gotchas
 
-- Root `main.js` is a **generated artifact** (build output). Do not edit it directly.
-- Root `manifest.json` and `versions.json` are **maintained at repo root** as the source of truth (Obsidian requires manifest.json at root).
-- `.gitignore` excludes `*.js` at root but explicitly allows specific files via negation patterns — check before adding new `.js` files.
-- `deploy.sh` is a local deploy script that uses the `DEPLOY_TARGET_DIR` environment variable for the target path.
-- `reference/` and `.omo/` directories are internal/planning — excluded from git.
-- **Pre-commit hook** runs `pnpm lint:fix && git add -u` automatically. Staged files get auto-fixed and re-staged.
+- **NOT a monorepo.** Single package at repo root. No `pnpm-workspace.yaml` or `packages/` dir.
+- Root `main.js` is a **generated build artifact**. Do not edit it directly.
+- `manifest.json` and `versions.json` live at repo root (Obsidian requires this).
+- `.gitignore` excludes `*.js` at root but allows `esbuild.config.mjs`, `version-bump.mjs`, `scripts/*.js` via negation.
+- `version-bump.mjs` is an npm version lifecycle hook (`npm version`). Prefer `scripts/release.js` for releasing.
+- `reference/` and `docs/` directories are internal/excluded from git.

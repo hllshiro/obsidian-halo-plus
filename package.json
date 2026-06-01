@@ -10,7 +10,7 @@
     "lint": "biome check src/",
     "lint:fix": "biome check src/ --write",
     "format": "biome format src/ --write",
-    "deploy:local": "./deploy.sh"
+    "deploy:local": "./scripts/deploy.sh"
   },
   "dependencies": {
     "@halo-dev/api-client": "^2.24.0",
