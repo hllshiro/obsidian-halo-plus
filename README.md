@@ -63,6 +63,8 @@ categories:
 
 ### 3. Auto Sync
 
+> **Note**: Auto sync feature is currently not working properly. Manual publishing is recommended.
+
 1. Enable "Folder Sync" in settings
 2. Add folder paths to sync
 3. Notes auto-publish after editing and saving
@@ -130,23 +132,47 @@ cd obsidian-halo-plus
 # Install dependencies
 pnpm install
 
-# Build all packages
+# Build (production)
 pnpm build
 
 # Development mode (watch for changes)
 pnpm dev
+
+# Lint
+pnpm lint
+
+# Lint + auto-fix
+pnpm lint:fix
+
+# Format
+pnpm format
 ```
 
 ### Project Structure
 
 ```
-obsidian-halo-plus/
-├── packages/
-│   ├── halo-sdk/              # Halo REST API SDK
-│   ├── obsidian-halo-plus/    # Obsidian plugin
-│   └── halo-cli/              # CLI tool
-├── pnpm-workspace.yaml
-└── package.json
+src/
+  main.ts                 # Plugin entry, exports HaloPlusPlugin (default export)
+  halo-client.ts          # createHaloClient() — wraps @halo-dev/api-client + axios
+  types.ts                # Shared types (HaloPost, HaloContent, etc.)
+  content/
+    frontmatter-parser.ts # parseFrontMatter / stringifyFrontMatter / generateSlug
+    image-handler.ts      # Image upload/base64 processing
+  renderer/
+    preview-renderer.ts   # Renders Obsidian note to HTML via headless component
+    html-cleaner.ts       # Post-render HTML cleanup
+  sync/
+    sync-manager.ts       # Sync logic
+    folder-watcher.ts     # File watcher for auto-sync
+  ui/
+    settings-tab.ts       # Plugin settings UI
+    publish-preview-modal.ts  # Pre-publish preview modal
+    publish-modal.ts      # Publish modal
+    publish-loading.ts    # Loading indicator
+    status-bar.ts         # Status bar widget
+  i18n/
+    index.ts              # i18n setup, uses Obsidian's getLanguage()
+    en.json / zh.json     # Translations
 ```
 
 ## License

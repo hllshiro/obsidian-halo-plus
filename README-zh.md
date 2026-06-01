@@ -61,6 +61,8 @@ categories:
 
 ### 3. 自动同步
 
+> **注意**：自动同步功能目前存在问题，暂时无法正常使用。建议使用手动发布。
+
 1. 在设置中启用 "文件夹同步"
 2. 添加需要同步的文件夹路径
 3. 编辑并保存笔记后自动发布
@@ -128,23 +130,47 @@ cd obsidian-halo-plus
 # 安装依赖
 pnpm install
 
-# 构建所有包
+# 构建（生产模式）
 pnpm build
 
 # 开发模式（监听文件变化）
 pnpm dev
+
+# 代码检查
+pnpm lint
+
+# 代码检查 + 自动修复
+pnpm lint:fix
+
+# 代码格式化
+pnpm format
 ```
 
 ### 项目结构
 
 ```
-obsidian-halo-plus/
-├── packages/
-│   ├── halo-sdk/              # Halo REST API SDK
-│   ├── obsidian-halo-plus/    # Obsidian 插件
-│   └── halo-cli/              # CLI 工具
-├── pnpm-workspace.yaml
-└── package.json
+src/
+  main.ts                 # 插件入口，导出 HaloPlusPlugin（默认导出）
+  halo-client.ts          # createHaloClient() — 封装 @halo-dev/api-client + axios
+  types.ts                # 共享类型（HaloPost, HaloContent 等）
+  content/
+    frontmatter-parser.ts # parseFrontMatter / stringifyFrontMatter / generateSlug
+    image-handler.ts      # 图片上传/Base64 处理
+  renderer/
+    preview-renderer.ts   # 通过无头组件将 Obsidian 笔记渲染为 HTML
+    html-cleaner.ts       # 渲染后 HTML 清理
+  sync/
+    sync-manager.ts       # 同步逻辑
+    folder-watcher.ts     # 文件监听器（用于自动同步）
+  ui/
+    settings-tab.ts       # 插件设置界面
+    publish-preview-modal.ts  # 发布前预览模态框
+    publish-modal.ts      # 发布模态框
+    publish-loading.ts    # 加载指示器
+    status-bar.ts         # 状态栏组件
+  i18n/
+    index.ts              # i18n 设置，使用 Obsidian 的 getLanguage()
+    en.json / zh.json     # 翻译文件
 ```
 
 ## 📄 许可证
