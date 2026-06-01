@@ -7,22 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-06-01
+
 ### Added
 - 图片上传：发布文章时自动上传本地图片到 Halo 附件，并将 src 替换为 permalink
 - 图片去重：相同文件只上传一次，所有引用都会被替换
 - 发布进度：发布预览模态框下方显示 Loading 动画和进度提示
 
+### Changed
+- 重构：从 monorepo 迁移为单一包结构，简化项目组织
+- CI：简化工作流，仅使用 Node.js 20 单一版本进行校验
+- 工具：优化 pre-commit hook，仅格式化暂存的 `.ts` 文件
+- 工具：迁移 deploy.sh 到 scripts 目录
+
 ### Fixed
-- 修复 i18n 语言检测：使用 Obsidian 官方 `getLanguage()` API 替代不可靠的 `vault.config.locale` 和 `navigator.language`，解决切换语言后插件仍显示中文的问题
+- 修复 i18n 语言检测：使用 Obsidian 官方 `getLanguage()` API 替代不可靠的 `vault.config.locale` 和 `navigator.language`
 - 修复附件上传 API 地址：使用正确的 `/apis/console.api.storage.halo.run/v1alpha1/attachments/-/upload`
 - 修复 `app://` 协议路径解析：正确提取 vault 相对路径
 - 修复附件上传结果访问：从 `result.status.permalink` 获取 permalink
+- 修复附件缓存校验：使用 Extension API 替代 Console API
+- 修复创建文章时通过 annotation 传递内容
+- 修复 fieldSelector 格式并添加调试日志
+- 修复重复发布和文章删除后发布的问题
+- 修复 monorepo 遗留的过期路径
 
 ### Removed
-- 移除未使用的 `.env.example` 文件（其中变量未被任何代码引用）
-
-### Changed
-- 更新 `AGENTS.md`：补充 `pnpm release` 命令、pre-commit hook 行为说明，修正环境变量描述
+- 移除未使用的 `.env.example` 文件
 
 ## [0.3.1] - 2026-05-29
 
