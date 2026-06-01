@@ -74,12 +74,21 @@ export class PostService {
     const postName = randomUUID();
     console.log('[PostService.create] Creating post with name:', postName);
 
+    // 准备内容（参考官方插件，通过 annotation 传递）
+    const content = {
+      rawType: 'HTML',
+      raw: params.content || '',
+      content: params.content || '',
+    };
+
     const post: Post = {
       apiVersion: 'content.halo.run/v1alpha1',
       kind: 'Post',
       metadata: {
         name: postName,
-        annotations: {},
+        annotations: {
+          'content.halo.run/content-json': JSON.stringify(content),
+        },
       },
       spec: {
         title: params.title,
