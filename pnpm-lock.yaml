@@ -30,9 +30,6 @@ importers:
       '@types/node':
         specifier: ^20.10.0
         version: 20.19.41
-      builtin-modules:
-        specifier: ^3.3.0
-        version: 3.3.0
       esbuild:
         specifier: ^0.19.0
         version: 0.19.12
@@ -281,10 +278,6 @@ packages:
 
   axios@1.16.1:
     resolution: {integrity: sha512-caYkukvroVPO8KrzuJEb50Hm07KwfBZPEC3VeFHTsqWHvKTsy54hjJz9BS/cdaypROE2rH6xvm9mHX4fgWkr3A==}
-
-  builtin-modules@3.3.0:
-    resolution: {integrity: sha512-zhaCDicdLuWN5UbN5IMnFqNMhNfo919sH85y2/ea+5Yg9TsTkeZxpL+JLbp6cgYFS4sRLp3YV4S6yDuqVWHYOw==}
-    engines: {node: '>=6'}
 
   call-bind-apply-helpers@1.0.2:
     resolution: {integrity: sha512-Sp1ablJ0ivDkSzjcaJdxEunN5/XvksFJ2sMBFfq6x0ryhQV/2b/KwFe21cMpmHtPOSij8K99/wSfoEuTObmuMQ==}
@@ -659,8 +652,6 @@ snapshots:
     transitivePeerDependencies:
       - debug
       - supports-color
-
-  builtin-modules@3.3.0: {}
 
   call-bind-apply-helpers@1.0.2:
     dependencies:

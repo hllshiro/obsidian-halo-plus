@@ -65,9 +65,28 @@ if (fs.existsSync(rootPackagePath)) {
   process.exit(1);
 }
 
+// 从 CHANGELOG.md 提取当前版本的 release notes
+function getReleaseNotes(version) {
+  const changelogPath = path.join(projectRoot, 'CHANGELOG.md');
+  if (!fs.existsSync(changelogPath)) {
+    return '';
+  }
+  
+  const changelog = fs.readFileSync(changelogPath, 'utf8');
+  const versionPattern = new RegExp(`## \\[${version}\\] - \\d{4}-\\d{2}-\\d{2}\\n([\\s\\S]*?)(?=## \\[|$)`);
+  const match = changelog.match(versionPattern);
+  
+  return match ? match[1].trim() : '';
+}
+
+const releaseNotes = getReleaseNotes(version);
+if (releaseNotes) {
+  console.log(`✓ 提取到 ${version} 的 release notes`);
+}
+
 // 创建 git commit
 try {
-  execSync('git add manifest.json versions.json package.json', { cwd: projectRoot });
+  execSync('git add manifest.json versions.json package.json pnpm-lock.yaml CHANGELOG.md', { cwd: projectRoot });
   execSync(`git commit -m "chore(release): ${version}"`, { cwd: projectRoot });
   console.log(`✓ 创建 git commit: chore(release): ${version}`);
 } catch (error) {
@@ -76,9 +95,14 @@ try {
   process.exit(1);
 }
 
-// 创建 git tag
+// 创建 git tag（带注释，包含 release notes）
 try {
-  execSync(`git tag ${version}`, { cwd: projectRoot });
+  const tagMessage = releaseNotes || `Release ${version}`;
+  // 使用临时文件传递多行消息，避免 shell 转义问题
+  const tmpFile = path.join(projectRoot, '.git', 'TAG_MSG');
+  fs.writeFileSync(tmpFile, tagMessage);
+  execSync(`git tag -a ${version} -F "${tmpFile}"`, { cwd: projectRoot });
+  fs.unlinkSync(tmpFile);
   console.log(`✓ 创建 git tag: ${version}`);
 } catch (error) {
   console.error('错误: 创建 git tag 失败');

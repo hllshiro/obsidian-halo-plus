@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-06-01
+
+### Changed
+- 工具：移除 `builtin-modules` 依赖，使用 Node.js 原生 `module.builtinModules`
+- 工具：精简 esbuild external 配置，仅保留实际使用的 `obsidian`
+- 工具：发布脚本自动从 CHANGELOG.md 提取 release notes 作为 git tag 注释
+
 ## [0.4.0] - 2026-06-01
 
 ### Added
