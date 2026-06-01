@@ -257,7 +257,7 @@ export default class HaloPlusPlugin extends Plugin {
         // 使用局部变量避免参数重赋值
         let currentFrontmatter = frontmatter;
 
-        // 参考官方插件：先尝试获取远端文章，失败则新建
+        // 获取远端文章，如果在回收站中则恢复，如果不存在则新建
         let existingPost: HaloPost | undefined;
         if (currentFrontmatter.halo?.name) {
           console.log(
@@ -267,10 +267,17 @@ export default class HaloPlusPlugin extends Plugin {
           try {
             existingPost = await postService.get(currentFrontmatter.halo.name);
             console.log('[doPublish] Successfully fetched existing post');
+
+            // 检查文章是否在回收站中
+            if (existingPost.spec.deleted) {
+              console.log('[doPublish] Post is in recycle bin, restoring...');
+              existingPost = await postService.restore(currentFrontmatter.halo.name);
+              console.log('[doPublish] Successfully restored post from recycle bin');
+            }
           } catch (error) {
             console.log('[doPublish] Failed to fetch post, will create new one:', error);
             existingPost = undefined;
-            // 文章已被删除，清除本地 halo 信息
+            // 文章不存在，清除本地 halo 信息
             await this.updateFrontMatter(file, { halo: undefined });
             currentFrontmatter = { ...currentFrontmatter, halo: undefined };
           }

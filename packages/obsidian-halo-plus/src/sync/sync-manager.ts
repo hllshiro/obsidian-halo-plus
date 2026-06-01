@@ -75,7 +75,7 @@ export class SyncManager {
         const effectiveTitle = frontmatter.title || file.basename;
         const effectiveSlug = frontmatter.slug || generateSlug(effectiveTitle);
 
-        // 参考官方插件：先尝试获取远端文章，失败则新建
+        // 获取远端文章，如果在回收站中则恢复，如果不存在则新建
         let existingPost: HaloPost | undefined;
         if (frontmatter.halo?.name) {
           console.log(
@@ -84,10 +84,17 @@ export class SyncManager {
           try {
             existingPost = await postService.get(frontmatter.halo.name);
             console.log('[SyncManager] Successfully fetched existing post');
+
+            // 检查文章是否在回收站中
+            if (existingPost.spec.deleted) {
+              console.log('[SyncManager] Post is in recycle bin, restoring...');
+              existingPost = await postService.restore(frontmatter.halo.name);
+              console.log('[SyncManager] Successfully restored post from recycle bin');
+            }
           } catch (error) {
             console.log('[SyncManager] Failed to fetch post, will create new one:', error);
             existingPost = undefined;
-            // 文章已被删除，清除本地 halo 信息
+            // 文章不存在，清除本地 halo 信息
             await this.updateFrontMatter(file, { halo: undefined });
             frontmatter = { ...frontmatter, halo: undefined };
           }

@@ -1,3 +1,4 @@
+import matter from 'gray-matter';
 import { type App, type Component, MarkdownRenderer, type TFile } from 'obsidian';
 
 /**
@@ -83,12 +84,12 @@ export class PreviewRenderer {
 
   /**
    * 预处理 Markdown
-   * 处理块 ID 引用等
+   * 去除 frontmatter，处理块 ID 引用等
    */
   private preprocessMarkdown(data: string): string {
-    // 简单实现 - 直接返回原始内容
-    // 如果需要处理块 ID，可以参考 obsidian-better-export-pdf 的 modifyMarkdown
-    return data;
+    // 使用 gray-matter 去除 frontmatter，只返回正文内容
+    const { content } = matter(data);
+    return content;
   }
 
   /**

@@ -46,15 +46,9 @@ export class PostService {
   async get(name: string): Promise<HaloPost> {
     console.log('[PostService.get] Querying post:', name);
     const httpClient = this.client.getHttpClient();
-    try {
-      // 使用用户中心 API（与官方插件一致）
-      const response = await httpClient.get(`/apis/uc.api.content.halo.run/v1alpha1/posts/${name}`);
-      console.log('[PostService.get] Got post:', response.data?.metadata?.name);
-      return response.data as HaloPost;
-    } catch (error) {
-      console.log('[PostService.get] Failed to get post:', error);
-      throw new Error(`Post not found: ${name}`);
-    }
+    const response = await httpClient.get(`/apis/uc.api.content.halo.run/v1alpha1/posts/${name}`);
+    console.log('[PostService.get] Got post:', response.data?.metadata?.name);
+    return response.data as HaloPost;
   }
 
   async exists(name: string): Promise<boolean> {
@@ -156,6 +150,25 @@ export class PostService {
 
   async delete(name: string): Promise<void> {
     await this.client.consoleApi.content.post.recyclePost({ name });
+  }
+
+  async restore(name: string): Promise<HaloPost> {
+    console.log('[PostService.restore] Restoring post from recycle bin:', name);
+
+    // 使用 JSON Patch API 恢复文章（与 Halo 官方 Web 控制台一致）
+    const response = await this.client.consoleApi.content.post.patchPost({
+      name,
+      jsonPatchInner: [
+        {
+          op: 'add',
+          path: '/spec/deleted',
+          value: false,
+        },
+      ],
+    });
+
+    console.log('[PostService.restore] Post restored:', response.data?.metadata?.name);
+    return response.data as HaloPost;
   }
 
   async publish(name: string): Promise<void> {

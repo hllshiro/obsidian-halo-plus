@@ -83,6 +83,6 @@ Update version in both `package.json` and `manifest.json` before tagging.
 - Root `main.js` is a **generated artifact** (build output). Do not edit it directly.
 - Root `manifest.json` and `versions.json` are **maintained at repo root** as the source of truth (Obsidian requires manifest.json at root).
 - `.gitignore` excludes `*.js` at root but explicitly allows specific files via negation patterns — check before adding new `.js` files.
-- `test.sh` is a local-only deploy script (hardcoded Windows/WSL path), not a test suite.
+- `deploy.sh` is a local deploy script that uses the `DEPLOY_TARGET_DIR` environment variable for the target path.
 - `reference/` and `.omo/` directories are internal/planning — excluded from git.
 - **Pre-commit hook** runs `pnpm lint:fix && git add -u` automatically. Staged files get auto-fixed and re-staged.

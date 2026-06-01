@@ -54,4 +54,3 @@ pnpm-debug.log*
 reference/
 
 # Local test scripts
-test.sh
