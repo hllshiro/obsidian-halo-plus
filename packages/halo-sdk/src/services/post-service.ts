@@ -1,4 +1,4 @@
-import type { ContentUpdateParam, Post, PostRequest, PostSpec } from '@halo-dev/api-client';
+import type { Post, PostSpec } from '@halo-dev/api-client';
 import type { HaloClient } from '../client';
 import type {
   CreatePostParams,
@@ -8,6 +8,15 @@ import type {
   PostPage,
   UpdatePostParams,
 } from '../types';
+
+// 生成 UUID v4（参考官方插件）
+function randomUUID(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
 
 export class PostService {
   constructor(private readonly client: HaloClient) {}
@@ -36,25 +45,16 @@ export class PostService {
 
   async get(name: string): Promise<HaloPost> {
     console.log('[PostService.get] Querying post:', name);
-    const response = await this.client.consoleApi.content.post.listPosts({
-      fieldSelector: [`metadata.name==${name}`],
-      page: 0,
-      size: 1,
-    });
-    console.log('[PostService.get] Query result:', {
-      total: response.data.total,
-      itemsCount: response.data.items?.length,
-      firstItem: response.data.items?.[0]?.metadata?.name,
-    });
-    const post = response.data.items?.[0];
-    if (!post) {
+    const httpClient = this.client.getHttpClient();
+    try {
+      // 使用用户中心 API（与官方插件一致）
+      const response = await httpClient.get(`/apis/uc.api.content.halo.run/v1alpha1/posts/${name}`);
+      console.log('[PostService.get] Got post:', response.data?.metadata?.name);
+      return response.data as HaloPost;
+    } catch (error) {
+      console.log('[PostService.get] Failed to get post:', error);
       throw new Error(`Post not found: ${name}`);
     }
-    // 确保 spec 存在，防止文章被删除后返回不完整的对象
-    if (!post.spec) {
-      throw new Error(`Post spec is missing for: ${name}. The post may have been deleted.`);
-    }
-    return post as unknown as HaloPost;
   }
 
   async exists(name: string): Promise<boolean> {
@@ -70,44 +70,43 @@ export class PostService {
   }
 
   async create(params: CreatePostParams): Promise<HaloPost> {
-    const contentHtml = params.content || '';
+    // 参考官方插件：客户端生成 UUID 作为 metadata.name
+    const postName = randomUUID();
+    console.log('[PostService.create] Creating post with name:', postName);
 
-    const postRequest: PostRequest = {
-      post: {
-        apiVersion: 'content.halo.run/v1alpha1',
-        kind: 'Post',
-        metadata: {
-          name: '',
-          generateName: 'post-',
-        },
-        spec: {
-          title: params.title,
-          slug: params.slug || this.generateSlug(params.title),
-          cover: params.cover || '',
-          deleted: false,
-          publish: params.publish ?? false,
-          pinned: params.pinned ?? false,
-          allowComment: params.allowComment ?? true,
-          visible: (params.visible ?? 'PUBLIC') as PostSpec['visible'],
-          priority: params.priority ?? 0,
-          excerpt: {
-            autoGenerate: params.excerpt?.autoGenerate ?? true,
-            raw: params.excerpt?.raw || '',
-          },
-          categories: params.categories || [],
-          tags: params.tags || [],
-          htmlMetas: params.htmlMetas || [],
-        },
+    const post: Post = {
+      apiVersion: 'content.halo.run/v1alpha1',
+      kind: 'Post',
+      metadata: {
+        name: postName,
+        annotations: {},
       },
-      content: {
-        raw: contentHtml,
-        content: contentHtml,
-        rawType: 'HTML',
+      spec: {
+        title: params.title,
+        slug: params.slug || this.generateSlug(params.title),
+        cover: params.cover || '',
+        deleted: false,
+        publish: params.publish ?? false,
+        pinned: params.pinned ?? false,
+        allowComment: params.allowComment ?? true,
+        visible: (params.visible ?? 'PUBLIC') as PostSpec['visible'],
+        priority: params.priority ?? 0,
+        excerpt: {
+          autoGenerate: params.excerpt?.autoGenerate ?? true,
+          raw: params.excerpt?.raw || '',
+        },
+        categories: params.categories || [],
+        tags: params.tags || [],
+        htmlMetas: params.htmlMetas || [],
       },
     };
 
-    const response = await this.client.consoleApi.content.post.draftPost({ postRequest });
-    return response.data as unknown as HaloPost;
+    // 使用用户中心 API（与官方插件一致）
+    const httpClient = this.client.getHttpClient();
+    const response = await httpClient.post('/apis/uc.api.content.halo.run/v1alpha1/posts', post);
+
+    console.log('[PostService.create] Created post:', response.data?.metadata?.name);
+    return response.data as HaloPost;
   }
 
   async update(name: string, params: UpdatePostParams): Promise<HaloPost> {
@@ -137,11 +136,13 @@ export class PostService {
       },
     };
 
-    const response = await this.client.coreApi.content.post.updatePost({
-      name,
-      post: postToUpdate,
-    });
-    return response.data as unknown as HaloPost;
+    // 使用用户中心 API（与官方插件一致）
+    const httpClient = this.client.getHttpClient();
+    const response = await httpClient.put(
+      `/apis/uc.api.content.halo.run/v1alpha1/posts/${name}`,
+      postToUpdate,
+    );
+    return response.data as HaloPost;
   }
 
   async delete(name: string): Promise<void> {
@@ -149,23 +150,55 @@ export class PostService {
   }
 
   async publish(name: string): Promise<void> {
-    await this.client.consoleApi.content.post.publishPost({ name });
+    // 使用用户中心 API（与官方插件一致）
+    const httpClient = this.client.getHttpClient();
+    await httpClient.put(`/apis/uc.api.content.halo.run/v1alpha1/posts/${name}/publish`);
   }
 
   async unpublish(name: string): Promise<void> {
-    await this.client.consoleApi.content.post.unpublishPost({ name });
+    // 使用用户中心 API（与官方插件一致）
+    const httpClient = this.client.getHttpClient();
+    await httpClient.put(`/apis/uc.api.content.halo.run/v1alpha1/posts/${name}/unpublish`);
   }
 
   async getContent(name: string): Promise<HaloContent> {
-    const response = await this.client.consoleApi.content.post.fetchPostHeadContent({ name });
-    return response.data as unknown as HaloContent;
+    // 使用用户中心 API 获取草稿内容（与官方插件一致）
+    const httpClient = this.client.getHttpClient();
+    const response = await httpClient.get(
+      `/apis/uc.api.content.halo.run/v1alpha1/posts/${name}/draft?patched=true`,
+    );
+    const snapshot = response.data;
+    const {
+      'content.halo.run/patched-content': patchedContent,
+      'content.halo.run/patched-raw': patchedRaw,
+    } = snapshot.metadata?.annotations || {};
+    const { rawType } = snapshot.spec || {};
+
+    return {
+      content: patchedContent || '',
+      raw: patchedRaw || '',
+      rawType: rawType || 'HTML',
+    };
   }
 
   async updateContent(name: string, content: HaloContent): Promise<void> {
-    await this.client.consoleApi.content.post.updatePostContent({
-      name,
-      content: content as unknown as ContentUpdateParam,
-    });
+    // 使用用户中心 API 更新草稿内容（与官方插件一致）
+    const httpClient = this.client.getHttpClient();
+
+    // 先获取当前草稿
+    const draftResponse = await httpClient.get(
+      `/apis/uc.api.content.halo.run/v1alpha1/posts/${name}/draft?patched=true`,
+    );
+    const snapshot = draftResponse.data;
+
+    // 更新 annotations 中的内容
+    snapshot.metadata.annotations = {
+      ...snapshot.metadata.annotations,
+      'content.halo.run/content-json': JSON.stringify(content),
+    };
+
+    // 更新草稿
+    await httpClient.put(`/apis/uc.api.content.halo.run/v1alpha1/posts/${name}/draft`, snapshot);
   }
 
   private generateSlug(title: string): string {
