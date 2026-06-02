@@ -10,6 +10,7 @@ import { ImageHandler } from './content/image-handler';
 import { createHaloClient, validateConnection } from './halo-client';
 import { i18n, t } from './i18n';
 import { PreviewRenderer } from './renderer/preview-renderer';
+import { TagCategoryService } from './service/tag-category-service';
 import type { HaloContent, HaloPost } from './types';
 import { PublishPreviewModal } from './ui/publish-preview-modal';
 import { SettingsTab } from './ui/settings-tab';
@@ -169,7 +170,7 @@ export default class HaloPlusPlugin extends Plugin {
     await this.saveData(this.settings);
   }
 
-  async publishToHalo(file: TFile): Promise<void> {
+  async publishToHalo(file: TFile, forceSkipPreview = false): Promise<void> {
     if (this.settings.sites.length === 0) {
       new Notice(t('notices.siteNotConfigured'));
       return;
@@ -178,7 +179,7 @@ export default class HaloPlusPlugin extends Plugin {
     const content = await this.app.vault.read(file);
     const frontmatter = parseFrontMatter(content);
 
-    if (this.settings.publishBehavior.skipPreview) {
+    if (forceSkipPreview || this.settings.publishBehavior.skipPreview) {
       const site = this.settings.sites.find((s) => s.isDefault) || this.settings.sites[0];
       const imageMode = this.settings.imageHandling.defaultMode;
       const notice = new Notice(t('modals.publish.publishing'), 0);
@@ -277,6 +278,21 @@ export default class HaloPlusPlugin extends Plugin {
         // 使用局部变量避免参数重赋值
         let currentFrontmatter = frontmatter;
 
+        // 处理标签和分类
+        const tagCategoryService = new TagCategoryService(client);
+        let tagNames: string[] = [];
+        let categoryNames: string[] = [];
+
+        if (currentFrontmatter.tags && currentFrontmatter.tags.length > 0) {
+          tagNames = await tagCategoryService.getTagNames(currentFrontmatter.tags as string[]);
+        }
+
+        if (currentFrontmatter.categories && currentFrontmatter.categories.length > 0) {
+          categoryNames = await tagCategoryService.getCategoryNames(
+            currentFrontmatter.categories as string[],
+          );
+        }
+
         // 获取远端文章，如果在回收站中则恢复，如果不存在则新建
         let existingPost: HaloPost | undefined;
         if (currentFrontmatter.halo?.name) {
@@ -331,8 +347,8 @@ export default class HaloPlusPlugin extends Plugin {
               excerpt: currentFrontmatter.excerpt
                 ? { autoGenerate: true, raw: currentFrontmatter.excerpt as string }
                 : existing.spec.excerpt,
-              categories: (currentFrontmatter.categories as string[]) ?? existing.spec.categories,
-              tags: (currentFrontmatter.tags as string[]) ?? existing.spec.tags,
+              categories: categoryNames.length > 0 ? categoryNames : existing.spec.categories,
+              tags: tagNames.length > 0 ? tagNames : existing.spec.tags,
             },
           };
           const updateResponse = await client.httpClient.put(
@@ -399,8 +415,8 @@ export default class HaloPlusPlugin extends Plugin {
                 autoGenerate: true,
                 raw: (currentFrontmatter.excerpt as string) || '',
               },
-              categories: (currentFrontmatter.categories as string[]) || [],
-              tags: (currentFrontmatter.tags as string[]) || [],
+              categories: categoryNames,
+              tags: tagNames,
               htmlMetas: [],
             },
           };
@@ -523,11 +539,11 @@ export default class HaloPlusPlugin extends Plugin {
 
     this.autoSyncTimeout = setTimeout(async () => {
       try {
-        await this.publishToHalo(file);
+        await this.publishToHalo(file, true); // 强制跳过预览，避免打断用户输入
       } catch (error) {
         console.error(`Auto sync failed for ${file.path}:`, error);
       }
-    }, 1000);
+    }, 3000); // 3秒防抖，避免在打字过程中触发
   }
 
   private autoSyncTimeout: ReturnType<typeof setTimeout> | null = null;

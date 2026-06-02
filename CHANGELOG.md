@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- TagCategoryService: 支持在发布时自动将 frontmatter 中的 tags/categories 显示名称转换为 Halo API 所需的内部名称
+- 自动创建不存在的标签/分类
+- 与原版 obsidian-halo 插件的 frontmatter 结构兼容
+
 ## [0.5.0] - 2026-06-02
 
 ### Added

@@ -10,6 +10,7 @@ import { ImageHandler } from '../content/image-handler';
 import { createHaloClient, validateConnection } from '../halo-client';
 import type HaloPlusPlugin from '../main';
 import { PreviewRenderer } from '../renderer/preview-renderer';
+import { TagCategoryService } from '../service/tag-category-service';
 import type { HaloContent, HaloPost } from '../types';
 
 export class SyncManager {
@@ -76,6 +77,21 @@ export class SyncManager {
         const effectiveTitle = frontmatter.title || file.basename;
         const effectiveSlug = frontmatter.slug || generateSlug(effectiveTitle);
 
+        // 处理标签和分类
+        const tagCategoryService = new TagCategoryService(client);
+        let tagNames: string[] = [];
+        let categoryNames: string[] = [];
+
+        if (frontmatter.tags && frontmatter.tags.length > 0) {
+          tagNames = await tagCategoryService.getTagNames(frontmatter.tags as string[]);
+        }
+
+        if (frontmatter.categories && frontmatter.categories.length > 0) {
+          categoryNames = await tagCategoryService.getCategoryNames(
+            frontmatter.categories as string[],
+          );
+        }
+
         // 获取远端文章，如果在回收站中则恢复，如果不存在则新建
         let existingPost: HaloPost | undefined;
         if (frontmatter.halo?.name) {
@@ -129,8 +145,8 @@ export class SyncManager {
               excerpt: frontmatter.excerpt
                 ? { autoGenerate: true, raw: frontmatter.excerpt }
                 : existing.spec.excerpt,
-              categories: frontmatter.categories ?? existing.spec.categories,
-              tags: frontmatter.tags ?? existing.spec.tags,
+              categories: categoryNames.length > 0 ? categoryNames : existing.spec.categories,
+              tags: tagNames.length > 0 ? tagNames : existing.spec.tags,
             },
           };
           const updateResponse = await client.httpClient.put(
@@ -195,8 +211,8 @@ export class SyncManager {
                 autoGenerate: true,
                 raw: frontmatter.excerpt || '',
               },
-              categories: frontmatter.categories || [],
-              tags: frontmatter.tags || [],
+              categories: categoryNames,
+              tags: tagNames,
               htmlMetas: [],
             },
           };
