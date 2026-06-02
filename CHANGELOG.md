@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-06-02
+
+### Added
+- 默认站点：将「设为默认」从站点表单移至站点列表，支持一键切换（互斥）
+
+### Changed
+- 发布进度：用 Obsidian Notice 替代自定义 PublishLoading 组件，进度消息更简洁
+
+### Fixed
+- 修复跳过预览设置不生效的问题
+- 修复部署脚本目标路径不存在时自动创建
+
 ## [0.4.2] - 2026-06-01
 
 ### Fixed
