@@ -179,6 +179,17 @@ export default class HaloPlusPlugin extends Plugin {
     const content = await this.app.vault.read(file);
     const frontmatter = parseFrontMatter(content);
 
+    if (this.settings.publishBehavior.skipPreview) {
+      const site = this.settings.sites.find((s) => s.isDefault) || this.settings.sites[0];
+      const imageMode = this.settings.imageHandling.defaultMode;
+      try {
+        await this.doPublish(file, frontmatter, site, imageMode);
+      } catch (error) {
+        console.error('[publishToHalo] Skip preview publish failed:', error);
+      }
+      return;
+    }
+
     const modal = new PublishPreviewModal(this.app, file, this.settings, frontmatter);
     modal.setOnPublish(async (site, imageMode, _loading) => {
       await this.doPublish(file, frontmatter, site, imageMode, _loading);
@@ -191,7 +202,7 @@ export default class HaloPlusPlugin extends Plugin {
     frontmatter: Record<string, unknown>,
     site: HaloSite,
     imageMode: 'upload' | 'base64',
-    loading: PublishLoading,
+    loading?: PublishLoading,
   ): Promise<void> {
     try {
       const client = createHaloClient({
@@ -209,7 +220,7 @@ export default class HaloPlusPlugin extends Plugin {
       component.load();
 
       try {
-        loading.updateText('正在渲染文章...');
+        loading?.updateText('正在渲染文章...');
         console.log('[doPublish] Rendering article...');
 
         const renderer = new PreviewRenderer(this.app, component);
@@ -217,7 +228,7 @@ export default class HaloPlusPlugin extends Plugin {
         const renderedHTML = renderResult.viewEl.innerHTML;
         renderResult.cleanup();
 
-        loading.updateText('正在处理附件...');
+        loading?.updateText('正在处理附件...');
         console.log('[doPublish] Processing attachments...');
 
         const imageHandler = new ImageHandler(this.app);
@@ -248,7 +259,7 @@ export default class HaloPlusPlugin extends Plugin {
           })),
         });
 
-        loading.updateText('正在发布文章...');
+        loading?.updateText('正在发布文章...');
         console.log('[doPublish] Publishing article...');
 
         let post: HaloPost | undefined;
