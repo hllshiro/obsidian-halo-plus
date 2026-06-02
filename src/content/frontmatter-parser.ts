@@ -28,6 +28,8 @@ export interface FrontMatterData {
     name: string;
     publish: boolean;
     images?: ImageCacheEntry[];
+    tagNames?: string[];
+    categoryNames?: string[];
   };
   [key: string]: unknown;
 }
