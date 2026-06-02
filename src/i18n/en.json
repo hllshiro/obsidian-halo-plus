@@ -9,7 +9,8 @@
       "siteName": "Site Name",
       "siteURL": "Site URL",
       "apiToken": "API Token",
-      "defaultSite": "Default Site",
+      "setDefault": "Set as default",
+      "currentDefault": "Current default",
       "save": "Save"
     },
     "publishBehavior": {

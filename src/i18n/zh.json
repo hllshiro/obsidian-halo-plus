@@ -9,7 +9,8 @@
       "siteName": "站点名称",
       "siteURL": "站点 URL",
       "apiToken": "API Token",
-      "defaultSite": "默认站点",
+      "setDefault": "设为默认",
+      "currentDefault": "当前默认",
       "save": "保存"
     },
     "publishBehavior": {

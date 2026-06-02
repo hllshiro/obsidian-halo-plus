@@ -46,6 +46,18 @@ export class SettingsTab extends PluginSettingTab {
         .setDesc(site.url)
         .addButton((btn) =>
           btn
+            .setButtonText(
+              site.isDefault
+                ? t('settings.siteManagement.currentDefault')
+                : t('settings.siteManagement.setDefault'),
+            )
+            .setDisabled(site.isDefault)
+            .onClick(() => {
+              this.setAsDefault(index);
+            }),
+        )
+        .addButton((btn) =>
+          btn
             .setButtonText(t('settings.siteManagement.editSite'))
             .setCta()
             .onClick(() => {
@@ -205,6 +217,16 @@ export class SettingsTab extends PluginSettingTab {
     );
     modal.open();
   }
+
+  private async setAsDefault(index: number): Promise<void> {
+    const sites = this.plugin.getSites();
+    const wasDefault = sites[index].isDefault;
+    sites.forEach((site, i) => {
+      site.isDefault = i === index ? !wasDefault : false;
+    });
+    await this.plugin.saveSettings();
+    this.display();
+  }
 }
 
 class SiteModal extends Modal {
@@ -256,12 +278,6 @@ class SiteModal extends Modal {
         });
       text.inputEl.type = 'password';
     });
-
-    new Setting(contentEl).setName(t('settings.siteManagement.defaultSite')).addToggle((toggle) =>
-      toggle.setValue(this.data.isDefault).onChange((value) => {
-        this.data.isDefault = value;
-      }),
-    );
 
     new Setting(contentEl)
       .addButton((btn) =>
