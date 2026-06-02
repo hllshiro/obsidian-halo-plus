@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.3] - 2026-06-02
+
+### Fixed
+- 修复 CI lockfile 不一致：移除 axios 后未更新 `pnpm-lock.yaml`
+
+### Changed
+- 文档补充：修改依赖后必须运行 `pnpm install` 更新锁文件
+
 ## [0.6.2] - 2026-06-02
 
 ### Changed

@@ -106,3 +106,4 @@ node scripts/release.js 0.6.1
 2. scope 使用英文小写
 3. 每次提交只做一件事
 4. 提交前确保代码通过 lint 检查
+5. **修改 `package.json` 依赖后必须运行 `pnpm install` 更新 `pnpm-lock.yaml`**，否则 CI 会因 `--frozen-lockfile` 报错

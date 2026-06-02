@@ -11,9 +11,6 @@ importers:
       '@halo-dev/api-client':
         specifier: ^2.24.0
         version: 2.24.0(axios@1.16.1)
-      axios:
-        specifier: ^1.6.0
-        version: 1.16.1
       gray-matter:
         specifier: ^4.0.3
         version: 4.0.3

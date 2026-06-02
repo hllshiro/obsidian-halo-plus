@@ -107,6 +107,7 @@ Version must match across `manifest.json` and `package.json`.
 - `.gitignore` excludes `*.js` at root but allows `esbuild.config.mjs`, `version-bump.mjs`, `scripts/*.js` via negation.
 - `version-bump.mjs` is an npm version lifecycle hook (`npm version`). Prefer `scripts/release.js` for releasing.
 - `reference/` 目录（API 文档、参考仓库）被 gitignore，仅本地开发使用。`docs/superpowers/` 是内部规划文档。
+- **修改 `package.json` 依赖后必须运行 `pnpm install` 更新 `pnpm-lock.yaml`**，CI 使用 `--frozen-lockfile`，锁文件不一致会直接报错。
 
 ## Autonomous Planning Requirements
 
