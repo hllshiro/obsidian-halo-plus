@@ -24,6 +24,7 @@ echo "正在构建..."
 pnpm build
 
 echo "正在复制文件..."
+mkdir -p "$DEPLOY_TARGET_DIR"
 cp dist/main.js "$DEPLOY_TARGET_DIR/"
 cp dist/styles.css "$DEPLOY_TARGET_DIR/"
 cp manifest.json "$DEPLOY_TARGET_DIR/"
