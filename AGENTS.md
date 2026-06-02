@@ -104,3 +104,57 @@ Version must match across `manifest.json` and `package.json`.
 - `.gitignore` excludes `*.js` at root but allows `esbuild.config.mjs`, `version-bump.mjs`, `scripts/*.js` via negation.
 - `version-bump.mjs` is an npm version lifecycle hook (`npm version`). Prefer `scripts/release.js` for releasing.
 - `reference/` 目录（API 文档、参考仓库）被 gitignore，仅本地开发使用。`docs/superpowers/` 是内部规划文档。
+
+## Autonomous Planning Requirements
+
+**每次会话必须遵循以下自主规划流程：**
+
+### 1. 会话启动检查
+
+每次会话开始时，必须：
+- 检查 `docs/superpowers/autonomous-planning-framework.md` 是否存在
+- 如果不存在，创建该文件并初始化框架
+- 确认框架文档已加载并理解
+
+### 2. 用户输入处理
+
+当用户提供开发方向或问题时：
+- **立即响应**：不要等待更多上下文
+- **自主规划**：根据框架文档制定实现计划
+- **主动决策**：自行决定提交时机和版本号
+
+### 3. 决策权限
+
+**允许自主决策的事项：**
+- 实现方案的技术细节
+- 代码提交时机（遵循提交规范）
+- 版本号选择（遵循语义化版本）
+- 文档创建和更新
+
+**需要用户确认的事项：**
+- 破坏性变更（主版本号变更）
+- 影响用户体验的重大改动
+- 涉及安全性的修改
+
+### 4. 文档更新要求
+
+每次完成任务后，必须更新：
+- `CHANGELOG.md`：记录变更内容
+- 相关设计文档（如果涉及架构变更）
+- 提交信息：遵循 Conventional Commits 规范
+
+### 5. 质量保证
+
+提交前必须：
+- 运行 `pnpm lint` 检查代码质量
+- 运行 `pnpm build` 确保构建成功
+- 验证变更符合预期
+
+### 6. 框架文档位置
+
+自主规划框架文档位于：
+- `docs/superpowers/autonomous-planning-framework.md`：主框架文档
+- `docs/commit-convention.md`：提交规范
+- `docs/superpowers/specs/`：设计文档
+- `docs/superpowers/plans/`：实现计划
+- `docs/superpowers/acceptance/`：验收标准
