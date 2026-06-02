@@ -11,7 +11,6 @@ import { createHaloClient, validateConnection } from './halo-client';
 import { i18n, t } from './i18n';
 import { PreviewRenderer } from './renderer/preview-renderer';
 import type { HaloContent, HaloPost } from './types';
-import type { PublishLoading } from './ui/publish-loading';
 import { PublishPreviewModal } from './ui/publish-preview-modal';
 import { SettingsTab } from './ui/settings-tab';
 
@@ -182,17 +181,26 @@ export default class HaloPlusPlugin extends Plugin {
     if (this.settings.publishBehavior.skipPreview) {
       const site = this.settings.sites.find((s) => s.isDefault) || this.settings.sites[0];
       const imageMode = this.settings.imageHandling.defaultMode;
+      const notice = new Notice(t('modals.publish.publishing'), 0);
       try {
-        await this.doPublish(file, frontmatter, site, imageMode);
+        await this.doPublish(file, frontmatter, site, imageMode, notice);
+        notice.hide();
       } catch (error) {
         console.error('[publishToHalo] Skip preview publish failed:', error);
+        notice.setMessage(
+          t('modals.publish.failedToPublish', {
+            error: error instanceof Error ? error.message : 'Unknown error',
+          }),
+        );
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        notice.hide();
       }
       return;
     }
 
     const modal = new PublishPreviewModal(this.app, file, this.settings, frontmatter);
-    modal.setOnPublish(async (site, imageMode, _loading) => {
-      await this.doPublish(file, frontmatter, site, imageMode, _loading);
+    modal.setOnPublish(async (site, imageMode, _notice) => {
+      await this.doPublish(file, frontmatter, site, imageMode, _notice);
     });
     modal.open();
   }
@@ -202,7 +210,7 @@ export default class HaloPlusPlugin extends Plugin {
     frontmatter: Record<string, unknown>,
     site: HaloSite,
     imageMode: 'upload' | 'base64',
-    loading?: PublishLoading,
+    notice?: Notice,
   ): Promise<void> {
     try {
       const client = createHaloClient({
@@ -220,7 +228,7 @@ export default class HaloPlusPlugin extends Plugin {
       component.load();
 
       try {
-        loading?.updateText('正在渲染文章...');
+        notice?.setMessage('正在渲染文章...');
         console.log('[doPublish] Rendering article...');
 
         const renderer = new PreviewRenderer(this.app, component);
@@ -228,7 +236,7 @@ export default class HaloPlusPlugin extends Plugin {
         const renderedHTML = renderResult.viewEl.innerHTML;
         renderResult.cleanup();
 
-        loading?.updateText('正在处理附件...');
+        notice?.setMessage('正在处理附件...');
         console.log('[doPublish] Processing attachments...');
 
         const imageHandler = new ImageHandler(this.app);
@@ -246,7 +254,7 @@ export default class HaloPlusPlugin extends Plugin {
           client,
           imageMode,
           this.settings.imageHandling.base64Quality,
-          loading,
+          notice,
           existingImageCache,
         );
         const processedHTML = imageResult.html;
@@ -259,7 +267,7 @@ export default class HaloPlusPlugin extends Plugin {
           })),
         });
 
-        loading?.updateText('正在发布文章...');
+        notice?.setMessage('正在发布文章...');
         console.log('[doPublish] Publishing article...');
 
         let post: HaloPost | undefined;

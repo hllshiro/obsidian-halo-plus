@@ -1,7 +1,6 @@
-import { type App, TFile } from 'obsidian';
+import { type App, type Notice, TFile } from 'obsidian';
 import type { HaloClient } from '../halo-client';
 import type { HaloAttachment } from '../types';
-import type { PublishLoading } from '../ui/publish-loading';
 import type { ImageCacheEntry } from './frontmatter-parser';
 
 /**
@@ -29,7 +28,7 @@ export class ImageHandler {
    * @param client Halo 客户端（upload 模式需要）
    * @param mode 处理模式：upload 或 base64
    * @param quality Base64 压缩质量（0-100）
-   * @param loading 进度提示组件
+   * @param notice 进度通知
    * @param existingImageCache 已有的图片缓存
    * @returns 处理结果，包含处理后的 HTML 和更新后的图片缓存
    */
@@ -39,7 +38,7 @@ export class ImageHandler {
     client?: HaloClient,
     mode: 'upload' | 'base64' = 'upload',
     quality = 80,
-    loading?: PublishLoading,
+    notice?: Notice,
     existingImageCache?: ImageCacheEntry[],
   ): Promise<ImageProcessResult> {
     // 解析 HTML
@@ -58,9 +57,9 @@ export class ImageHandler {
       return true;
     });
 
-    // Loading: 发现本地图片
-    if (localImages.length > 0 && loading) {
-      loading.updateText(`发现 ${localImages.length} 张本地图片`);
+    // Notice: 发现本地图片
+    if (localImages.length > 0 && notice) {
+      notice.setMessage(`发现 ${localImages.length} 张本地图片`);
       console.log(`[ImageHandler] Found ${localImages.length} local images`);
     }
 
@@ -150,8 +149,8 @@ export class ImageHandler {
         const mimeType = this.getMimeType(localPath);
 
         if (mode === 'upload' && client) {
-          if (loading) {
-            loading.updateText(`正在上传附件 (${uploadedCount + 1}/${localImages.length})`);
+          if (notice) {
+            notice.setMessage(`正在上传附件 (${uploadedCount + 1}/${localImages.length})`);
           }
 
           const blob = new Blob([imageBuffer], { type: mimeType });
