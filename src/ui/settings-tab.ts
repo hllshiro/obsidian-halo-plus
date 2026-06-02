@@ -180,17 +180,31 @@ export class SettingsTab extends PluginSettingTab {
         );
       });
 
-      new Setting(containerEl)
+      const addFolderSetting = new Setting(containerEl)
         .setName(t('settings.autoSync.addFolder'))
         .setDesc(t('settings.autoSync.addFolderDesc'))
-        .addText((text) =>
-          text.setPlaceholder('folder/path').onChange(async (value) => {
-            if (value && !folders.includes(value)) {
-              this.plugin.settings.autoSync.folders.push(value);
-              await this.plugin.saveSettings();
-              this.display();
-            }
-          }),
+        .addText((text) => text.setPlaceholder('folder/path'))
+        .addButton((btn) =>
+          btn
+            .setButtonText(t('settings.autoSync.add'))
+            .setCta()
+            .onClick(async () => {
+              const inputEl = addFolderSetting.controlEl.querySelector('input');
+              if (inputEl) {
+                const value = inputEl.value.trim();
+                if (!value) {
+                  new Notice(t('notices.pleaseEnterFolderPath'));
+                  return;
+                }
+                if (folders.includes(value)) {
+                  new Notice(t('notices.folderAlreadyExists'));
+                  return;
+                }
+                this.plugin.settings.autoSync.folders.push(value);
+                await this.plugin.saveSettings();
+                this.display();
+              }
+            }),
         );
     }
   }

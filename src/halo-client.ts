@@ -1,9 +1,9 @@
 import {
+  axiosInstance,
   createConsoleApiClient,
   createCoreApiClient,
   createPublicApiClient,
 } from '@halo-dev/api-client';
-import axios, { type AxiosInstance } from 'axios';
 
 export interface HaloClientConfig {
   baseUrl: string;
@@ -15,18 +15,16 @@ export interface HaloClient {
   consoleApi: ReturnType<typeof createConsoleApiClient>;
   coreApi: ReturnType<typeof createCoreApiClient>;
   publicApi: ReturnType<typeof createPublicApiClient>;
-  httpClient: AxiosInstance;
+  httpClient: typeof axiosInstance;
 }
 
 export function createHaloClient(config: HaloClientConfig): HaloClient {
-  const httpClient = axios.create({
-    baseURL: config.baseUrl,
-    timeout: config.timeout ?? 30000,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${config.token}`,
-    },
-  });
+  axiosInstance.defaults.baseURL = config.baseUrl;
+  axiosInstance.defaults.timeout = config.timeout ?? 30000;
+  axiosInstance.defaults.headers.common['X-Requested-With'] = undefined;
+  axiosInstance.defaults.headers.common['Content-Type'] = 'application/json';
+  axiosInstance.defaults.headers.common.Authorization = `Bearer ${config.token}`;
+  const httpClient = axiosInstance;
 
   return {
     consoleApi: createConsoleApiClient(httpClient),

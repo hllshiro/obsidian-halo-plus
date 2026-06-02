@@ -14,7 +14,6 @@
   },
   "dependencies": {
     "@halo-dev/api-client": "^2.24.0",
-    "axios": "^1.6.0",
     "gray-matter": "^4.0.3",
     "i18next": "^23.7.0",
     "transliteration": "^2.3.5"

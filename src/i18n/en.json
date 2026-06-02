@@ -35,6 +35,7 @@
       "enableAutoSyncDesc": "Automatically publish notes when saved",
       "addFolder": "Add folder",
       "addFolderDesc": "Add a folder to sync",
+      "add": "Add",
       "remove": "Remove"
     }
   },
@@ -85,6 +86,8 @@
     "noteNotPublished": "This note is not published to Halo",
     "siteNotFound": "Halo site not found",
     "pleaseFillAllFields": "Please fill in all fields",
+    "pleaseEnterFolderPath": "Please enter a folder path",
+    "folderAlreadyExists": "This folder is already in the sync list",
     "failedToDelete": "Failed to delete: {error}"
   },
   "statusBar": {

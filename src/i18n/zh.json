@@ -35,6 +35,7 @@
       "enableAutoSyncDesc": "保存笔记时自动发布",
       "addFolder": "添加文件夹",
       "addFolderDesc": "添加要同步的文件夹",
+      "add": "添加",
       "remove": "移除"
     }
   },
@@ -85,6 +86,8 @@
     "noteNotPublished": "此笔记未发布到 Halo",
     "siteNotFound": "未找到 Halo 站点",
     "pleaseFillAllFields": "请填写所有字段",
+    "pleaseEnterFolderPath": "请输入文件夹路径",
+    "folderAlreadyExists": "该文件夹已在同步列表中",
     "failedToDelete": "删除失败: {error}"
   },
   "statusBar": {
