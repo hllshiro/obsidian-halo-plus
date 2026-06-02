@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-06-02
+
+### Changed
+- 补充版本发布文档：CHANGELOG 必填要求、提交规范更新
+- Release workflow 自动从 CHANGELOG.md 提取 release notes 作为 GitHub Release 内容
+
 ## [0.6.1] - 2026-06-02
 
 ### Fixed
