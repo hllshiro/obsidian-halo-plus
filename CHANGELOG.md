@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-06-02
+
+### Fixed
+- 修复 CORS 预检失败：移除 axios 直接依赖，使用 `@halo-dev/api-client` 导出的 `axiosInstance`，并删除其默认的 `X-Requested-With` 头
+
+### Changed
+- 改进自动同步文件夹添加 UI：使用显式按钮替代回车提交，增加空值和重复校验
+
+## [0.6.0] - 2026-06-02
+
 ### Added
 - TagCategoryService: 支持在发布时自动将 frontmatter 中的 tags/categories 显示名称转换为 Halo API 所需的内部名称
 - 自动创建不存在的标签/分类

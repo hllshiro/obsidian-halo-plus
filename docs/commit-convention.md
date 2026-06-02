@@ -62,8 +62,38 @@ ci: 简化工作流，使用单一 Node 版本
 
 1. 更新版本号（package.json, manifest.json, versions.json）
 2. 创建 `chore(release): <version>` 提交
-3. 创建 git tag
+3. 创建 git tag（注释从 CHANGELOG.md 提取）
 4. 推送到远程仓库
+
+### CHANGELOG 要求
+
+**发布前必须更新 CHANGELOG.md**，格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)：
+
+```markdown
+## [0.6.1] - 2026-06-02
+
+### Added
+- 新增功能描述
+
+### Changed
+- 变更描述
+
+### Fixed
+- 修复描述
+```
+
+- 版本号使用 `## [x.x.x] - YYYY-MM-DD` 格式
+- 按 Added / Changed / Deprecated / Removed / Fixed / Security 分类
+- 只写用户可见的变更，不写内部重构细节
+- `## [Unreleased]` 区域存放未发布的变更，发布时移入对应版本号
+
+发布流程：
+
+```bash
+# 1. 更新 CHANGELOG.md，将 [Unreleased] 内容移入新版本号
+# 2. 运行发布脚本
+node scripts/release.js 0.6.1
+```
 
 ## 工具
 

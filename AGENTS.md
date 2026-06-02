@@ -87,9 +87,12 @@ src/
 `node scripts/release.js <version>` does:
 1. Validates version is `x.x.x` format (no `v` prefix — Obsidian rejects it)
 2. Updates `manifest.json`, `versions.json`, `package.json` in sync
-3. Commits as `chore(release): <version>`, creates git tag, pushes
+3. Stages `CHANGELOG.md` (must be updated before releasing)
+4. Commits as `chore(release): <version>`, creates git tag (with release notes from CHANGELOG), pushes
 
 Version must match across `manifest.json` and `package.json`.
+
+**发布前必须更新 CHANGELOG.md**，将 `[Unreleased]` 内容移入新版本号。详见 `docs/commit-convention.md`。
 
 ## Environment
 
