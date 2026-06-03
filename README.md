@@ -63,8 +63,6 @@ categories:
 
 ### 3. Auto Sync
 
-> **Note**: Auto sync feature is currently not working properly. Manual publishing is recommended.
-
 1. Enable "Folder Sync" in settings
 2. Add folder paths to sync
 3. Notes auto-publish after editing and saving
