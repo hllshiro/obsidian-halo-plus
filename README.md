@@ -115,65 +115,9 @@ categories:
 | `halo.name` | Halo article ID |
 | `halo.publish` | Whether published |
 
-## Development
+## Contributing
 
-### Requirements
-
-- Node.js 16+
-- pnpm 8+
-
-### Local Development
-
-```bash
-# Clone repository
-git clone https://github.com/hllshiro/obsidian-halo-plus.git
-cd obsidian-halo-plus
-
-# Install dependencies
-pnpm install
-
-# Build (production)
-pnpm build
-
-# Development mode (watch for changes)
-pnpm dev
-
-# Lint
-pnpm lint
-
-# Lint + auto-fix
-pnpm lint:fix
-
-# Format
-pnpm format
-```
-
-### Project Structure
-
-```
-src/
-  main.ts                 # Plugin entry, exports HaloPlusPlugin (default export)
-  halo-client.ts          # createHaloClient() — wraps @halo-dev/api-client + axios
-  types.ts                # Shared types (HaloPost, HaloContent, etc.)
-  content/
-    frontmatter-parser.ts # parseFrontMatter / stringifyFrontMatter / generateSlug
-    image-handler.ts      # Image upload/base64 processing
-  renderer/
-    preview-renderer.ts   # Renders Obsidian note to HTML via headless component
-    html-cleaner.ts       # Post-render HTML cleanup
-  sync/
-    sync-manager.ts       # Sync logic
-    folder-watcher.ts     # File watcher for auto-sync
-  ui/
-    settings-tab.ts       # Plugin settings UI
-    publish-preview-modal.ts  # Pre-publish preview modal
-    publish-modal.ts      # Publish modal
-    publish-loading.ts    # Loading indicator
-    status-bar.ts         # Status bar widget
-  i18n/
-    index.ts              # i18n setup, uses Obsidian's getLanguage()
-    en.json / zh.json     # Translations
-```
+Contributions are welcome! Please see the [Contributing Guide](CONTRIBUTING.md) for development setup, code conventions, and commit guidelines.
 
 ## License
 
