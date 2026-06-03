@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.4] - 2026-06-03
+
+### Changed
+- 自动同步增加内容 hash 校验，内容无变化时跳过发布，避免重复请求
+
 ## [0.6.3] - 2026-06-02
 
 ### Fixed
