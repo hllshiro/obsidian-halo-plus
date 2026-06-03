@@ -58,11 +58,20 @@ const DEFAULT_SETTINGS: PluginSettings = {
   },
 };
 
+function djb2Hash(str: string): string {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash + str.charCodeAt(i)) & 0xffffffff;
+  }
+  return hash.toString(36);
+}
+
 /**
  * Halo Plus 插件主入口
  */
 export default class HaloPlusPlugin extends Plugin {
   settings: PluginSettings = DEFAULT_SETTINGS;
+  private contentHashCache: Map<string, string> = new Map();
 
   async onload(): Promise<void> {
     await this.loadSettings();
@@ -539,7 +548,17 @@ export default class HaloPlusPlugin extends Plugin {
 
     this.autoSyncTimeout = setTimeout(async () => {
       try {
+        const content = await this.app.vault.read(file);
+        const contentHash = djb2Hash(content);
+        const cachedHash = this.contentHashCache.get(file.path);
+
+        if (cachedHash === contentHash) {
+          console.log(`[autoSync] Content unchanged for ${file.path}, skipping`);
+          return;
+        }
+
         await this.publishToHalo(file, true); // 强制跳过预览，避免打断用户输入
+        this.contentHashCache.set(file.path, contentHash);
       } catch (error) {
         console.error(`Auto sync failed for ${file.path}:`, error);
       }
