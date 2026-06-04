@@ -38,7 +38,14 @@
       "add": "添加",
       "remove": "移除",
       "scanInterval": "扫描间隔",
-      "scanIntervalDesc": "自动扫描文件变更的时间间隔（秒）。减小此值可更快检测到变更，但会略微增加系统开销。默认 30 秒"
+      "scanIntervalDesc": "自动扫描文件变更的时间间隔（秒）。减小此值可更快检测到变更，但会略微增加系统开销。默认 30 秒",
+      "checkOnStartup": "启动时检查",
+      "checkOnStartupDesc": "插件加载完成后立即执行一次文件变更检查，不等待首次扫描间隔"
+    },
+    "debug": {
+      "title": "调试",
+      "verboseLog": "详细日志",
+      "verboseLogDesc": "在控制台输出调试信息，用于排查问题。正常情况无需开启"
     }
   },
   "modals": {

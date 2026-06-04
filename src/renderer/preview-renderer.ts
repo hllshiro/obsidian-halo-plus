@@ -1,6 +1,6 @@
 import matter from 'gray-matter';
 import { type App, type Component, MarkdownRenderer, type TFile } from 'obsidian';
-import type { Logger } from '../utils/logger';
+import { Logger } from '../utils/logger';
 
 /**
  * 异步函数类型
@@ -31,12 +31,12 @@ export interface RenderResult {
 export class PreviewRenderer {
   private readonly app: App;
   private readonly component: Component;
-  private readonly logger?: Logger;
+  private readonly logger: Logger;
 
-  constructor(app: App, component: Component, logger?: Logger) {
+  constructor(app: App, component: Component) {
     this.app = app;
     this.component = component;
-    this.logger = logger;
+    this.logger = Logger.getInstance();
   }
 
   /**
@@ -74,11 +74,7 @@ export class PreviewRenderer {
     // 等待动态内容（Dataview、Tasks 等）
     await this.waitForDynamicContent(data, viewEl);
 
-    if (this.logger) {
-      this.logger.verbose(`Render time: ${Date.now() - startTime}ms`);
-    } else {
-      console.debug(`[PreviewRenderer] Render time: ${Date.now() - startTime}ms`);
-    }
+    this.logger.verbose(`Render time: ${Date.now() - startTime}ms`);
 
     // 清理函数
     const cleanup = () => {

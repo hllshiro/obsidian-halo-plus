@@ -2,7 +2,6 @@ import { type App, Component, Modal, Notice, Setting, type TFile } from 'obsidia
 import { t } from '../i18n';
 import type { HaloSite, PluginSettings } from '../main';
 import { PreviewRenderer, type RenderResult } from '../renderer/preview-renderer';
-import type { Logger } from '../utils/logger';
 
 /**
  * 发布预览 Modal 回调
@@ -25,7 +24,6 @@ export class PublishPreviewModal extends Modal {
   private frontmatter: Record<string, unknown>;
   private renderResult: RenderResult | null = null;
   private component: Component;
-  private logger?: Logger;
 
   // 操作面板状态
   private selectedSite: HaloSite;
@@ -44,13 +42,11 @@ export class PublishPreviewModal extends Modal {
     file: TFile,
     settings: PluginSettings,
     frontmatter: Record<string, unknown>,
-    logger?: Logger,
   ) {
     super(app);
     this.file = file;
     this.settings = settings;
     this.frontmatter = frontmatter;
-    this.logger = logger;
     this.component = new Component();
 
     // 默认选中默认站点
@@ -111,7 +107,7 @@ export class PublishPreviewModal extends Modal {
       this.component.load();
 
       // 创建渲染器并渲染
-      const renderer = new PreviewRenderer(this.app, this.component, this.logger);
+      const renderer = new PreviewRenderer(this.app, this.component);
       this.renderResult = await renderer.renderFile(this.file);
 
       // 清除加载状态

@@ -81,7 +81,7 @@ export default class HaloPlusPlugin extends Plugin {
   private contentHashCache: Map<string, string> = new Map();
   private mtimeCache: Map<string, number> = new Map();
   private autoSyncTimer: ReturnType<typeof setInterval> | null = null;
-  private logger: Logger = new Logger('[HaloPlus]', () => this.settings.verboseLog);
+  private logger: Logger = Logger.init('[HaloPlus]', () => this.settings.verboseLog);
 
   async onload(): Promise<void> {
     await this.loadSettings();
@@ -223,7 +223,7 @@ export default class HaloPlusPlugin extends Plugin {
     }
 
     const content = await this.app.vault.read(file);
-    const frontmatter = parseFrontMatter(content, this.logger);
+    const frontmatter = parseFrontMatter(content);
 
     if (forceSkipPreview || this.settings.publishBehavior.skipPreview) {
       const site = this.settings.sites.find((s) => s.isDefault) || this.settings.sites[0];
@@ -245,7 +245,7 @@ export default class HaloPlusPlugin extends Plugin {
       return;
     }
 
-    const modal = new PublishPreviewModal(this.app, file, this.settings, frontmatter, this.logger);
+    const modal = new PublishPreviewModal(this.app, file, this.settings, frontmatter);
     modal.setOnPublish(async (site, imageMode, _notice) => {
       await this.doPublish(file, frontmatter, site, imageMode, _notice);
     });
@@ -278,7 +278,7 @@ export default class HaloPlusPlugin extends Plugin {
         notice?.setMessage('正在渲染文章...');
         this.logger.verbose('Rendering article...');
 
-        const renderer = new PreviewRenderer(this.app, component, this.logger);
+        const renderer = new PreviewRenderer(this.app, component);
         const renderResult = await renderer.renderFile(file);
         const renderedHTML = renderResult.viewEl.innerHTML;
         renderResult.cleanup();
@@ -286,7 +286,7 @@ export default class HaloPlusPlugin extends Plugin {
         notice?.setMessage('正在处理附件...');
         this.logger.verbose('Processing attachments...');
 
-        const imageHandler = new ImageHandler(this.app, () => this.settings.verboseLog);
+        const imageHandler = new ImageHandler(this.app);
         const existingImageCache = (frontmatter.halo?.images as ImageCacheEntry[]) || [];
         this.logger.verbose('Existing image cache:', {
           count: existingImageCache.length,
@@ -509,7 +509,7 @@ export default class HaloPlusPlugin extends Plugin {
    */
   async deleteFromHalo(file: TFile): Promise<void> {
     const content = await this.app.vault.read(file);
-    const frontmatter = parseFrontMatter(content, this.logger);
+    const frontmatter = parseFrontMatter(content);
 
     if (!frontmatter.halo?.name) {
       new Notice(t('notices.noteNotPublished'));
@@ -732,7 +732,7 @@ export default class HaloPlusPlugin extends Plugin {
    */
   private async updateFrontMatter(file: TFile, updates: Record<string, unknown>): Promise<void> {
     const content = await this.app.vault.read(file);
-    const frontmatter = parseFrontMatter(content, this.logger);
+    const frontmatter = parseFrontMatter(content);
 
     const newFrontmatter = {
       ...frontmatter,

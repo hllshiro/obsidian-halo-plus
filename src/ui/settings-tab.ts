@@ -31,6 +31,9 @@ export class SettingsTab extends PluginSettingTab {
 
     // 自动同步
     this.renderAutoSync(containerEl);
+
+    // 调试
+    this.renderDebug(containerEl);
   }
 
   private renderSiteManagement(containerEl: HTMLElement): void {
@@ -222,7 +225,33 @@ export class SettingsTab extends PluginSettingTab {
               this.plugin.restartAutoSync();
             }),
         );
+
+      // 启动时检查
+      new Setting(containerEl)
+        .setName(t('settings.autoSync.checkOnStartup'))
+        .setDesc(t('settings.autoSync.checkOnStartupDesc'))
+        .addToggle((toggle) =>
+          toggle.setValue(this.plugin.settings.checkOnStartup === true).onChange(async (value) => {
+            this.plugin.settings.checkOnStartup = value;
+            await this.plugin.saveSettings();
+          }),
+        );
     }
+  }
+
+  private renderDebug(containerEl: HTMLElement): void {
+    containerEl.createEl('h3', { text: t('settings.debug.title') });
+
+    // 详细日志
+    new Setting(containerEl)
+      .setName(t('settings.debug.verboseLog'))
+      .setDesc(t('settings.debug.verboseLogDesc'))
+      .addToggle((toggle) =>
+        toggle.setValue(this.plugin.settings.verboseLog === true).onChange(async (value) => {
+          this.plugin.settings.verboseLog = value;
+          await this.plugin.saveSettings();
+        }),
+      );
   }
 
   private addSite(): void {

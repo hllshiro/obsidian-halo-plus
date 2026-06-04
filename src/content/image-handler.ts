@@ -1,6 +1,7 @@
 import { type App, type Notice, TFile } from 'obsidian';
 import type { HaloClient } from '../halo-client';
 import type { HaloAttachment } from '../types';
+import { Logger } from '../utils/logger';
 import type { ImageCacheEntry } from './frontmatter-parser';
 
 /**
@@ -18,7 +19,11 @@ export interface ImageProcessResult {
  * 处理 Obsidian 笔记中的图片
  */
 export class ImageHandler {
-  constructor(private readonly app: App) {}
+  private logger: Logger;
+
+  constructor(private readonly app: App) {
+    this.logger = Logger.getInstance();
+  }
 
   /**
    * 处理 HTML 中的图片
@@ -60,7 +65,7 @@ export class ImageHandler {
     // Notice: 发现本地图片
     if (localImages.length > 0 && notice) {
       notice.setMessage(`发现 ${localImages.length} 张本地图片`);
-      console.log(`[ImageHandler] Found ${localImages.length} local images`);
+      this.logger.verbose(`Found ${localImages.length} local images`);
     }
 
     const errors: Array<{ src: string; error: unknown }> = [];
@@ -87,24 +92,24 @@ export class ImageHandler {
     // 如果是上传模式，验证现有缓存中的附件是否仍然存在
     const validCacheEntries = new Map<string, ImageCacheEntry>();
     if (mode === 'upload' && client && existingImageCache && existingImageCache.length > 0) {
-      console.log(`[ImageHandler] Validating ${existingImageCache.length} cached images...`);
+      this.logger.verbose(`Validating ${existingImageCache.length} cached images...`);
       for (const entry of existingImageCache) {
         try {
-          console.log(`[ImageHandler] Validating attachment: ${entry.attachmentName}`);
+          this.logger.verbose(`Validating attachment: ${entry.attachmentName}`);
           await client.coreApi.storage.attachment.getAttachment({
             name: entry.attachmentName,
           });
           validCacheEntries.set(entry.localPath, entry);
-          console.log(`[ImageHandler] Cache validated: ${entry.localPath} -> ${entry.permalink}`);
+          this.logger.verbose(`Cache validated: ${entry.localPath} -> ${entry.permalink}`);
         } catch (error) {
-          console.log(
-            `[ImageHandler] Cache invalid (attachment deleted or not accessible): ${entry.localPath}`,
+          this.logger.verbose(
+            `Cache invalid (attachment deleted or not accessible): ${entry.localPath}`,
             error,
           );
         }
       }
-      console.log(
-        `[ImageHandler] Validation complete: ${validCacheEntries.size}/${existingImageCache.length} valid`,
+      this.logger.verbose(
+        `Validation complete: ${validCacheEntries.size}/${existingImageCache.length} valid`,
       );
     }
 
@@ -121,7 +126,7 @@ export class ImageHandler {
 
         // 已在本次处理中上传过，跳过
         if (uploadedMap.has(localPath)) {
-          console.log(`[ImageHandler] Already processed in this session: ${localPath}`);
+          this.logger.verbose(`Already processed in this session: ${localPath}`);
           continue;
         }
 
@@ -138,11 +143,11 @@ export class ImageHandler {
             processedPaths.add(localPath);
           }
 
-          console.log(`[ImageHandler] Skipped (cached): ${localPath} -> ${cachedEntry.permalink}`);
+          this.logger.verbose(`Skipped (cached): ${localPath} -> ${cachedEntry.permalink}`);
           continue;
         }
 
-        console.log(`[ImageHandler] No valid cache found for: ${localPath}, will upload`);
+        this.logger.verbose(`No valid cache found for: ${localPath}, will upload`);
 
         // 读取图片文件
         const imageBuffer = await this.app.vault.adapter.readBinary(localPath);
@@ -155,7 +160,7 @@ export class ImageHandler {
 
           const blob = new Blob([imageBuffer], { type: mimeType });
           const fileName = localPath.split('/').pop() || 'image.png';
-          console.log(`[ImageHandler] Uploading: ${fileName}`);
+          this.logger.verbose(`Uploading: ${fileName}`);
 
           const formData = new FormData();
           formData.append('file', blob, fileName);
@@ -181,13 +186,13 @@ export class ImageHandler {
             processedPaths.add(localPath);
           }
 
-          console.log(`[ImageHandler] Uploaded: ${fileName} -> ${permalink}`);
+          this.logger.verbose(`Uploaded: ${fileName} -> ${permalink}`);
         } else {
           const base64 = await this.imageToBase64(imageBuffer, mimeType, quality);
           uploadedMap.set(localPath, `data:${mimeType};base64,${base64}`);
         }
       } catch (error) {
-        console.error(`[ImageHandler] Failed to process image: ${src}`, error);
+        this.logger.error(`Failed to process image: ${src}`, error);
         errors.push({ src, error });
       }
     }
@@ -202,7 +207,7 @@ export class ImageHandler {
 
     // 记录处理统计
     if (skippedCount > 0) {
-      console.log(`[ImageHandler] Skipped ${skippedCount} cached images`);
+      this.logger.verbose(`Skipped ${skippedCount} cached images`);
     }
 
     // 如果有图片上传失败，抛出错误
@@ -283,7 +288,7 @@ export class ImageHandler {
       // 如果不以 vault 根目录开头，返回原始绝对路径
       return absolutePath;
     } catch (error) {
-      console.error(`[ImageHandler] Failed to parse app:// path: ${src}`, error);
+      this.logger.error(`Failed to parse app:// path: ${src}`, error);
       return null;
     }
   }

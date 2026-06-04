@@ -38,7 +38,14 @@
       "add": "Add",
       "remove": "Remove",
       "scanInterval": "Scan interval",
-      "scanIntervalDesc": "Time interval (seconds) between file change scans. Lower values detect changes faster with slightly more system overhead. Default: 30s"
+      "scanIntervalDesc": "Time interval (seconds) between file change scans. Lower values detect changes faster with slightly more system overhead. Default: 30s",
+      "checkOnStartup": "Check on startup",
+      "checkOnStartupDesc": "Run a file change check immediately after plugin loads, without waiting for the first scan interval"
+    },
+    "debug": {
+      "title": "Debug",
+      "verboseLog": "Verbose logging",
+      "verboseLogDesc": "Output debug information to the console for troubleshooting. Not needed under normal usage"
     }
   },
   "modals": {

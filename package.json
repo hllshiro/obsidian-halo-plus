@@ -9,8 +9,7 @@
     "version": "node version-bump.mjs && git add manifest.json versions.json",
     "lint": "biome check src/",
     "lint:fix": "biome check src/ --write",
-    "format": "biome format src/ --write",
-    "deploy:local": "./scripts/deploy.sh"
+    "format": "biome format src/ --write"
   },
   "dependencies": {
     "@halo-dev/api-client": "^2.24.0",

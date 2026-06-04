@@ -24,7 +24,7 @@ export class SyncManager {
   constructor(app: App, plugin: HaloPlusPlugin) {
     this.app = app;
     this.plugin = plugin;
-    this.logger = new Logger('[SyncManager]', () => plugin.settings.verboseLog);
+    this.logger = Logger.getInstance();
   }
 
   async syncFile(file: TFile): Promise<void> {
@@ -51,18 +51,18 @@ export class SyncManager {
       }
 
       const content = await this.app.vault.read(file);
-      let frontmatter = parseFrontMatter(content, this.logger);
+      let frontmatter = parseFrontMatter(content);
 
       const component = new Component();
       component.load();
 
       try {
-        const renderer = new PreviewRenderer(this.app, component, this.logger);
+        const renderer = new PreviewRenderer(this.app, component);
         const renderResult = await renderer.renderFile(file);
         const renderedHTML = renderResult.viewEl.innerHTML;
         renderResult.cleanup();
 
-        const imageHandler = new ImageHandler(this.app, () => this.plugin.settings.verboseLog);
+        const imageHandler = new ImageHandler(this.app);
         const existingImageCache = (frontmatter.halo?.images as ImageCacheEntry[]) || [];
         const imageResult = await imageHandler.processImages(
           renderedHTML,
@@ -278,7 +278,7 @@ export class SyncManager {
 
   private async updateFrontMatter(file: TFile, updates: Record<string, unknown>): Promise<void> {
     const content = await this.app.vault.read(file);
-    const frontmatter = parseFrontMatter(content, this.logger);
+    const frontmatter = parseFrontMatter(content);
 
     const newFrontmatter = {
       ...frontmatter,

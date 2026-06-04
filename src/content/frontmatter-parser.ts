@@ -1,5 +1,5 @@
 import matter from 'gray-matter';
-import type { Logger } from '../utils/logger';
+import { Logger } from '../utils/logger';
 
 /**
  * 已上传图片缓存信息
@@ -37,19 +37,14 @@ export interface FrontMatterData {
  * 解析 FrontMatter
  *
  * @param content 包含 FrontMatter 的 markdown 内容
- * @param logger 可选的日志对象
  * @returns 解析后的 FrontMatter 数据
  */
-export function parseFrontMatter(content: string, logger?: Logger): FrontMatterData {
+export function parseFrontMatter(content: string): FrontMatterData {
   try {
     const { data } = matter(content);
     return data as FrontMatterData;
   } catch (error) {
-    if (logger) {
-      logger.error('Failed to parse frontmatter:', error);
-    } else {
-      console.error('Failed to parse frontmatter:', error);
-    }
+    Logger.getInstance().error('Failed to parse frontmatter:', error);
     return {};
   }
 }
