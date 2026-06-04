@@ -14,7 +14,7 @@
 | 代码检查 | `pnpm lint` |
 | 检查 + 自动修复 | `pnpm lint:fix` |
 | 格式化 | `pnpm format` |
-| 本地部署 | `pnpm deploy:local`（需在 `.env` 中设置 `DEPLOY_TARGET_DIR`） |
+| 本地部署 | 开发模式下自动部署（需在 `.env` 中设置 `DEPLOY_TARGET_DIR`） |
 | 发布版本 | `node scripts/release.js <version>`（如 `node scripts/release.js 0.4.0`） |
 
 **无测试套件。** 不要运行 `pnpm test` — 未定义该脚本。
@@ -66,6 +66,8 @@ src/
     publish-modal.ts      # 发布模态框
     publish-loading.ts    # 加载指示器
     status-bar.ts         # 状态栏组件
+  utils/
+    logger.ts             # Logger 工具类（verbose 模式控制）
   i18n/
     index.ts              # i18n 设置，使用 Obsidian 的 getLanguage()
     en.json / zh.json     # 翻译文件
@@ -117,8 +119,8 @@ Conventional Commits 格式：`<type>(<scope>): <description>`
 
 ## 环境变量
 
-`.env`（已 gitignore）仅用于本地开发。模板见 `.env.example`：
-- `DEPLOY_TARGET_DIR` — `pnpm deploy:local` 的目标路径
+`.env`（已 gitignore）仅用于本地开发：
+- `DEPLOY_TARGET_DIR` — 开发模式（`pnpm dev`）自动部署到此路径
 
 ## 注意事项
 
