@@ -14,6 +14,7 @@ import { TagCategoryService } from './service/tag-category-service';
 import type { HaloContent, HaloPost } from './types';
 import { PublishPreviewModal } from './ui/publish-preview-modal';
 import { SettingsTab } from './ui/settings-tab';
+import { Logger } from './utils/logger';
 
 // 插件设置接口
 export interface HaloSite {
@@ -39,6 +40,8 @@ export interface PluginSettings {
     folders: string[];
     scanInterval: number;
   };
+  verboseLog: boolean;
+  checkOnStartup: boolean;
 }
 
 // 默认设置
@@ -58,6 +61,8 @@ const DEFAULT_SETTINGS: PluginSettings = {
     folders: [],
     scanInterval: 30,
   },
+  verboseLog: false,
+  checkOnStartup: false,
 };
 
 function djb2Hash(str: string): string {
@@ -76,7 +81,7 @@ export default class HaloPlusPlugin extends Plugin {
   private contentHashCache: Map<string, string> = new Map();
   private mtimeCache: Map<string, number> = new Map();
   private autoSyncTimer: ReturnType<typeof setInterval> | null = null;
-  private autoSyncInitialized = false;
+  private logger: Logger = new Logger('[HaloPlus]', () => this.settings.verboseLog);
 
   async onload(): Promise<void> {
     await this.loadSettings();
@@ -153,25 +158,62 @@ export default class HaloPlusPlugin extends Plugin {
     // 添加设置面板
     this.addSettingTab(new SettingsTab(this.app, this));
 
-    // 启动自动同步扫描
+    // 等待 vault 就绪后再启动自动同步扫描
     if (this.settings.autoSync.enabled) {
-      this.startAutoSync();
+      this.app.workspace.onLayoutReady(() => {
+        this.startAutoSync();
+        if (this.settings.checkOnStartup) {
+          this.scanAndPublish().catch((error) => {
+            this.logger.error('Startup scan failed:', error);
+          });
+        }
+      });
     }
 
-    console.log('Halo Plus plugin loaded');
+    this.logger.log('Plugin loaded');
   }
 
   onunload(): void {
     this.stopAutoSync();
-    console.log('Halo Plus plugin unloaded');
+    this.saveAllData();
+    this.logger.log('Plugin unloaded');
   }
 
   async loadSettings(): Promise<void> {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    const data = await this.loadData();
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, data);
+
+    // 加载文件缓存（mtime + hash）
+    if (data?.fileCache?.mtime) {
+      for (const [path, mtime] of Object.entries(data.fileCache.mtime)) {
+        this.mtimeCache.set(path, mtime as number);
+      }
+    }
+    if (data?.fileCache?.hash) {
+      for (const [path, hash] of Object.entries(data.fileCache.hash)) {
+        this.contentHashCache.set(path, hash as string);
+      }
+    }
+
+    this.logger.verbose(
+      `Loaded cache: ${this.mtimeCache.size} mtime, ${this.contentHashCache.size} hash`,
+    );
   }
 
   async saveSettings(): Promise<void> {
-    await this.saveData(this.settings);
+    await this.saveAllData();
+  }
+
+  private async saveAllData(): Promise<void> {
+    const mtime: Record<string, number> = {};
+    for (const [path, val] of this.mtimeCache) mtime[path] = val;
+    const hash: Record<string, string> = {};
+    for (const [path, val] of this.contentHashCache) hash[path] = val;
+
+    await this.saveData({
+      ...this.settings,
+      fileCache: { mtime, hash },
+    });
   }
 
   async publishToHalo(file: TFile, forceSkipPreview = false): Promise<void> {
@@ -191,7 +233,7 @@ export default class HaloPlusPlugin extends Plugin {
         await this.doPublish(file, frontmatter, site, imageMode, notice);
         notice.hide();
       } catch (error) {
-        console.error('[publishToHalo] Skip preview publish failed:', error);
+        this.logger.error('Skip preview publish failed:', error);
         notice.setMessage(
           t('modals.publish.failedToPublish', {
             error: error instanceof Error ? error.message : 'Unknown error',
@@ -234,7 +276,7 @@ export default class HaloPlusPlugin extends Plugin {
 
       try {
         notice?.setMessage('正在渲染文章...');
-        console.log('[doPublish] Rendering article...');
+        this.logger.verbose('Rendering article...');
 
         const renderer = new PreviewRenderer(this.app, component);
         const renderResult = await renderer.renderFile(file);
@@ -242,11 +284,11 @@ export default class HaloPlusPlugin extends Plugin {
         renderResult.cleanup();
 
         notice?.setMessage('正在处理附件...');
-        console.log('[doPublish] Processing attachments...');
+        this.logger.verbose('Processing attachments...');
 
-        const imageHandler = new ImageHandler(this.app);
+        const imageHandler = new ImageHandler(this.app, () => this.settings.verboseLog);
         const existingImageCache = (frontmatter.halo?.images as ImageCacheEntry[]) || [];
-        console.log('[doPublish] Existing image cache:', {
+        this.logger.verbose('Existing image cache:', {
           count: existingImageCache.length,
           images: existingImageCache.map((img) => ({
             localPath: img.localPath,
@@ -264,7 +306,7 @@ export default class HaloPlusPlugin extends Plugin {
         );
         const processedHTML = imageResult.html;
         const updatedImageCache = imageResult.imageCache;
-        console.log('[doPublish] Updated image cache:', {
+        this.logger.verbose('Updated image cache:', {
           count: updatedImageCache.length,
           images: updatedImageCache.map((img) => ({
             localPath: img.localPath,
@@ -273,7 +315,7 @@ export default class HaloPlusPlugin extends Plugin {
         });
 
         notice?.setMessage('正在发布文章...');
-        console.log('[doPublish] Publishing article...');
+        this.logger.verbose('Publishing article...');
 
         let post: HaloPost | undefined;
         const effectiveTitle = (frontmatter.title as string) || file.basename;
@@ -300,8 +342,8 @@ export default class HaloPlusPlugin extends Plugin {
         // 获取远端文章，如果在回收站中则恢复，如果不存在则新建
         let existingPost: HaloPost | undefined;
         if (currentFrontmatter.halo?.name) {
-          console.log(
-            '[doPublish] Found existing halo name, trying to fetch from remote:',
+          this.logger.verbose(
+            'Found existing halo name, trying to fetch from remote:',
             currentFrontmatter.halo.name,
           );
           try {
@@ -309,32 +351,32 @@ export default class HaloPlusPlugin extends Plugin {
               `/apis/uc.api.content.halo.run/v1alpha1/posts/${currentFrontmatter.halo.name}`,
             );
             existingPost = getResponse.data as HaloPost;
-            console.log('[doPublish] Successfully fetched existing post');
+            this.logger.verbose('Successfully fetched existing post');
 
             // 检查文章是否在回收站中
             if (existingPost.spec.deleted) {
-              console.log('[doPublish] Post is in recycle bin, restoring...');
+              this.logger.verbose('Post is in recycle bin, restoring...');
               const restoreResponse = await client.coreApi.content.post.patchPost({
                 name: currentFrontmatter.halo.name,
                 jsonPatchInner: [{ op: 'add', path: '/spec/deleted', value: false }],
               });
               existingPost = restoreResponse.data as HaloPost;
-              console.log('[doPublish] Successfully restored post from recycle bin');
+              this.logger.verbose('Successfully restored post from recycle bin');
             }
           } catch (error) {
-            console.log('[doPublish] Failed to fetch post, will create new one:', error);
+            this.logger.verbose('Failed to fetch post, will create new one:', error);
             existingPost = undefined;
             // 文章不存在，清除本地 halo 信息
             await this.updateFrontMatter(file, { halo: undefined });
             currentFrontmatter = { ...currentFrontmatter, halo: undefined };
           }
         } else {
-          console.log('[doPublish] No existing halo name found, will create new post');
+          this.logger.verbose('No existing halo name found, will create new post');
         }
 
         if (existingPost) {
           // 更新已有文章
-          console.log('[doPublish] Updating existing post:', existingPost.metadata.name);
+          this.logger.verbose('Updating existing post:', existingPost.metadata.name);
 
           // GET + merge + PUT（Halo API 要求完整对象）
           const existingResponse = await client.httpClient.get(
@@ -386,10 +428,10 @@ export default class HaloPlusPlugin extends Plugin {
             );
           }
 
-          console.log(`[doPublish] Article updated: ${effectiveTitle}`);
+          this.logger.verbose(`Article updated: ${effectiveTitle}`);
         } else {
           // 创建新文章（客户端生成 UUID，通过 annotation 注入内容）
-          console.log('[doPublish] Creating new post');
+          this.logger.verbose('Creating new post');
           const postName = crypto.randomUUID();
           const contentData: HaloContent = {
             rawType: 'HTML',
@@ -430,7 +472,7 @@ export default class HaloPlusPlugin extends Plugin {
           );
           post = createResponse.data as HaloPost;
 
-          console.log(`[doPublish] Article created: ${effectiveTitle}`);
+          this.logger.verbose(`Article created: ${effectiveTitle}`);
         }
 
         if (post) {
@@ -446,13 +488,13 @@ export default class HaloPlusPlugin extends Plugin {
           });
         }
 
-        console.log(`[doPublish] Article published: ${effectiveTitle}`);
+        this.logger.verbose(`Article published: ${effectiveTitle}`);
         new Notice(t('notices.published', { title: effectiveTitle }));
       } finally {
         component.unload();
       }
     } catch (error) {
-      console.error('[doPublish] Failed:', error);
+      this.logger.error('Publish failed:', error);
       new Notice(
         t('modals.publish.failedToPublish', {
           error: error instanceof Error ? error.message : 'Unknown error',
@@ -495,7 +537,7 @@ export default class HaloPlusPlugin extends Plugin {
 
       new Notice(t('notices.deleted', { title: frontmatter.title || file.basename }));
     } catch (error) {
-      console.error('Failed to delete from Halo:', error);
+      this.logger.error('Failed to delete from Halo:', error);
       new Notice(
         t('notices.failedToDelete', {
           error: error instanceof Error ? error.message : 'Unknown error',
@@ -524,7 +566,7 @@ export default class HaloPlusPlugin extends Plugin {
         try {
           await this.publishToHalo(file);
         } catch (error) {
-          console.error(`Failed to sync ${file.path}:`, error);
+          this.logger.error(`Failed to sync ${file.path}:`, error);
         }
       }
     }
@@ -539,9 +581,11 @@ export default class HaloPlusPlugin extends Plugin {
     this.stopAutoSync();
     const intervalMs = (this.settings.autoSync.scanInterval || 30) * 1000;
     this.autoSyncTimer = setInterval(() => {
-      this.scanAndPublish();
+      this.scanAndPublish().catch((error) => {
+        this.logger.error('Scan failed:', error);
+      });
     }, intervalMs);
-    console.log(`[autoSync] Started with ${intervalMs / 1000}s interval`);
+    this.logger.log(`Auto sync started with ${intervalMs / 1000}s interval`);
   }
 
   /**
@@ -552,7 +596,7 @@ export default class HaloPlusPlugin extends Plugin {
       clearInterval(this.autoSyncTimer);
       this.autoSyncTimer = null;
     }
-    console.log('[autoSync] Stopped');
+    this.logger.log('Auto sync stopped');
   }
 
   /**
@@ -570,17 +614,41 @@ export default class HaloPlusPlugin extends Plugin {
    */
   private async scanAndPublish(): Promise<void> {
     const folders = this.settings.autoSync.folders;
-    if (folders.length === 0) return;
+    if (folders.length === 0) {
+      this.logger.verbose('Scan skipped: no watched folders configured');
+      return;
+    }
+
+    this.logger.verbose(`Scanning folders: ${folders.join(', ')}`);
 
     const files = this.app.vault
       .getMarkdownFiles()
       .filter((file) => folders.some((folder) => file.path.startsWith(folder)));
 
+    this.logger.verbose(`Found ${files.length} markdown files in watched folders`);
+
+    const isFirstRun = this.mtimeCache.size === 0;
+    if (isFirstRun) {
+      this.logger.verbose('First run: initializing cache only, no publishing');
+    }
+
+    let mtimeUnchanged = 0;
+    let hashUnchanged = 0;
+    let published = 0;
+    let errors = 0;
+
     for (const file of files) {
       try {
         // 第一级：mtime 检测
         const cachedMtime = this.mtimeCache.get(file.path);
-        if (cachedMtime === file.stat.mtime) continue;
+        if (cachedMtime === file.stat.mtime) {
+          mtimeUnchanged++;
+          continue;
+        }
+
+        this.logger.verbose(
+          `mtime changed: ${file.path} (cached: ${cachedMtime}, current: ${file.stat.mtime})`,
+        );
 
         // 第二级：内容 hash 检测
         const content = await this.app.vault.read(file);
@@ -590,30 +658,42 @@ export default class HaloPlusPlugin extends Plugin {
         if (cachedHash === contentHash) {
           // 内容没变，只更新 mtime 缓存
           this.mtimeCache.set(file.path, file.stat.mtime);
+          hashUnchanged++;
+          this.logger.verbose(`Hash unchanged: ${file.path}, only mtime cache updated`);
           continue;
         }
 
-        // 首次扫描只初始化缓存，不发布
-        if (!this.autoSyncInitialized) {
+        this.logger.verbose(
+          `Content changed: ${file.path} (hash: ${cachedHash} -> ${contentHash})`,
+        );
+
+        // 首次运行只初始化缓存，不发布
+        if (isFirstRun) {
           this.mtimeCache.set(file.path, file.stat.mtime);
           this.contentHashCache.set(file.path, contentHash);
+          this.logger.verbose(`Initialized cache: ${file.path}`);
           continue;
         }
 
         // 内容有变更，执行发布
-        console.log(`[autoSync] Change detected: ${file.path}, publishing...`);
+        this.logger.verbose(`Publishing: ${file.path}...`);
         await this.publishToHalo(file, true);
         this.mtimeCache.set(file.path, file.stat.mtime);
         this.contentHashCache.set(file.path, contentHash);
+        published++;
+        this.logger.verbose(`Published: ${file.path}`);
       } catch (error) {
-        console.error(`[autoSync] Failed to sync ${file.path}:`, error);
+        errors++;
+        this.logger.error(`Failed to sync ${file.path}:`, error);
       }
     }
 
-    // 首次扫描完成后标记，后续扫描才真正发布
-    if (!this.autoSyncInitialized) {
-      this.autoSyncInitialized = true;
-      console.log(`[autoSync] Initialized ${files.length} files`);
+    this.logger.verbose(
+      `Scan complete: ${files.length} files scanned, ${mtimeUnchanged} mtime unchanged, ${hashUnchanged} hash unchanged, ${published} published, ${errors} errors`,
+    );
+
+    if (isFirstRun) {
+      this.logger.log(`Initialized ${files.length} files`);
     }
   }
 
