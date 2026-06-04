@@ -236,7 +236,7 @@ export default class HaloPlusPlugin extends Plugin {
         this.logger.error('Skip preview publish failed:', error);
         notice.setMessage(
           t('modals.publish.failedToPublish', {
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error: this.extractErrorMessage(error),
           }),
         );
         await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -497,7 +497,7 @@ export default class HaloPlusPlugin extends Plugin {
       this.logger.error('Publish failed:', error);
       new Notice(
         t('modals.publish.failedToPublish', {
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: this.extractErrorMessage(error),
         }),
       );
       throw error;
@@ -540,7 +540,7 @@ export default class HaloPlusPlugin extends Plugin {
       this.logger.error('Failed to delete from Halo:', error);
       new Notice(
         t('notices.failedToDelete', {
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: this.extractErrorMessage(error),
         }),
       );
     }
@@ -695,6 +695,22 @@ export default class HaloPlusPlugin extends Plugin {
     if (isFirstRun) {
       this.logger.log(`Initialized ${files.length} files`);
     }
+  }
+
+  /**
+   * 提取错误信息，优先使用 Halo API 的 detail 字段
+   */
+  private extractErrorMessage(error: unknown): string {
+    if (error && typeof error === 'object' && 'response' in error) {
+      const axiosError = error as {
+        response?: { data?: { detail?: string; status?: number; title?: string } };
+      };
+      const data = axiosError.response?.data;
+      if (data?.detail) return data.detail;
+      if (data?.title) return `${data.title} (${data.status})`;
+    }
+    if (error instanceof Error) return error.message;
+    return 'Unknown error';
   }
 
   /**
