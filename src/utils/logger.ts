@@ -24,15 +24,21 @@ export class Logger {
   }
 
   log(...args: unknown[]): void {
-    console.log(this.prefix, ...args);
+    if (this.isVerbose()) {
+      console.log(this.prefix, ...args);
+    }
   }
 
   warn(...args: unknown[]): void {
-    console.warn(this.prefix, ...args);
+    if (this.isVerbose()) {
+      console.warn(this.prefix, ...args);
+    }
   }
 
   error(...args: unknown[]): void {
-    console.error(this.prefix, ...args);
+    if (this.isVerbose()) {
+      console.error(this.prefix, ...args);
+    }
   }
 
   verbose(...args: unknown[]): void {
