@@ -12,16 +12,19 @@ import type HaloPlusPlugin from '../main';
 import { PreviewRenderer } from '../renderer/preview-renderer';
 import { TagCategoryService } from '../service/tag-category-service';
 import type { HaloContent, HaloPost } from '../types';
+import { Logger } from '../utils/logger';
 
 export class SyncManager {
   private app: App;
   private plugin: HaloPlusPlugin;
   private syncQueue: Set<string> = new Set();
   private isSyncing = false;
+  private logger: Logger;
 
   constructor(app: App, plugin: HaloPlusPlugin) {
     this.app = app;
     this.plugin = plugin;
+    this.logger = new Logger('[SyncManager]', () => plugin.settings.verboseLog);
   }
 
   async syncFile(file: TFile): Promise<void> {
@@ -48,18 +51,18 @@ export class SyncManager {
       }
 
       const content = await this.app.vault.read(file);
-      let frontmatter = parseFrontMatter(content);
+      let frontmatter = parseFrontMatter(content, this.logger);
 
       const component = new Component();
       component.load();
 
       try {
-        const renderer = new PreviewRenderer(this.app, component);
+        const renderer = new PreviewRenderer(this.app, component, this.logger);
         const renderResult = await renderer.renderFile(file);
         const renderedHTML = renderResult.viewEl.innerHTML;
         renderResult.cleanup();
 
-        const imageHandler = new ImageHandler(this.app);
+        const imageHandler = new ImageHandler(this.app, () => this.plugin.settings.verboseLog);
         const existingImageCache = (frontmatter.halo?.images as ImageCacheEntry[]) || [];
         const imageResult = await imageHandler.processImages(
           renderedHTML,
@@ -95,40 +98,40 @@ export class SyncManager {
         // 获取远端文章，如果在回收站中则恢复，如果不存在则新建
         let existingPost: HaloPost | undefined;
         if (frontmatter.halo?.name) {
-          console.log(
-            `[SyncManager] Found existing halo name, trying to fetch: ${frontmatter.halo.name}`,
+          this.logger.verbose(
+            `Found existing halo name, trying to fetch: ${frontmatter.halo.name}`,
           );
           try {
             const getResponse = await client.httpClient.get(
               `/apis/uc.api.content.halo.run/v1alpha1/posts/${frontmatter.halo.name}`,
             );
             existingPost = getResponse.data as HaloPost;
-            console.log('[SyncManager] Successfully fetched existing post');
+            this.logger.verbose('Successfully fetched existing post');
 
             // 检查文章是否在回收站中
             if (existingPost.spec.deleted) {
-              console.log('[SyncManager] Post is in recycle bin, restoring...');
+              this.logger.verbose('Post is in recycle bin, restoring...');
               const restoreResponse = await client.coreApi.content.post.patchPost({
                 name: frontmatter.halo.name,
                 jsonPatchInner: [{ op: 'add', path: '/spec/deleted', value: false }],
               });
               existingPost = restoreResponse.data as HaloPost;
-              console.log('[SyncManager] Successfully restored post from recycle bin');
+              this.logger.verbose('Successfully restored post from recycle bin');
             }
           } catch (error) {
-            console.log('[SyncManager] Failed to fetch post, will create new one:', error);
+            this.logger.verbose('Failed to fetch post, will create new one:', error);
             existingPost = undefined;
             // 文章不存在，清除本地 halo 信息
             await this.updateFrontMatter(file, { halo: undefined });
             frontmatter = { ...frontmatter, halo: undefined };
           }
         } else {
-          console.log('[SyncManager] No existing halo name found, will create new post');
+          this.logger.verbose('No existing halo name found, will create new post');
         }
 
         if (existingPost) {
           // 更新已有文章
-          console.log('[SyncManager] Updating existing post:', existingPost.metadata.name);
+          this.logger.verbose('Updating existing post:', existingPost.metadata.name);
 
           // GET + merge + PUT（Halo API 要求完整对象）
           const existingResponse = await client.httpClient.get(
@@ -181,7 +184,7 @@ export class SyncManager {
           }
         } else {
           // 创建新文章（客户端生成 UUID，通过 annotation 注入内容）
-          console.log('[SyncManager] Creating new post');
+          this.logger.verbose('Creating new post');
           const postName = crypto.randomUUID();
           const contentData: HaloContent = {
             rawType: 'HTML',
@@ -255,7 +258,7 @@ export class SyncManager {
         try {
           await this.syncFile(file);
         } catch (error) {
-          console.error(`Failed to sync ${file.path}:`, error);
+          this.logger.error(`Failed to sync ${file.path}:`, error);
         }
       }
     } finally {
@@ -275,7 +278,7 @@ export class SyncManager {
 
   private async updateFrontMatter(file: TFile, updates: Record<string, unknown>): Promise<void> {
     const content = await this.app.vault.read(file);
-    const frontmatter = parseFrontMatter(content);
+    const frontmatter = parseFrontMatter(content, this.logger);
 
     const newFrontmatter = {
       ...frontmatter,

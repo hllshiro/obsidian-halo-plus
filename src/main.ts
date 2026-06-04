@@ -223,7 +223,7 @@ export default class HaloPlusPlugin extends Plugin {
     }
 
     const content = await this.app.vault.read(file);
-    const frontmatter = parseFrontMatter(content);
+    const frontmatter = parseFrontMatter(content, this.logger);
 
     if (forceSkipPreview || this.settings.publishBehavior.skipPreview) {
       const site = this.settings.sites.find((s) => s.isDefault) || this.settings.sites[0];
@@ -245,7 +245,7 @@ export default class HaloPlusPlugin extends Plugin {
       return;
     }
 
-    const modal = new PublishPreviewModal(this.app, file, this.settings, frontmatter);
+    const modal = new PublishPreviewModal(this.app, file, this.settings, frontmatter, this.logger);
     modal.setOnPublish(async (site, imageMode, _notice) => {
       await this.doPublish(file, frontmatter, site, imageMode, _notice);
     });
@@ -278,7 +278,7 @@ export default class HaloPlusPlugin extends Plugin {
         notice?.setMessage('正在渲染文章...');
         this.logger.verbose('Rendering article...');
 
-        const renderer = new PreviewRenderer(this.app, component);
+        const renderer = new PreviewRenderer(this.app, component, this.logger);
         const renderResult = await renderer.renderFile(file);
         const renderedHTML = renderResult.viewEl.innerHTML;
         renderResult.cleanup();
@@ -509,7 +509,7 @@ export default class HaloPlusPlugin extends Plugin {
    */
   async deleteFromHalo(file: TFile): Promise<void> {
     const content = await this.app.vault.read(file);
-    const frontmatter = parseFrontMatter(content);
+    const frontmatter = parseFrontMatter(content, this.logger);
 
     if (!frontmatter.halo?.name) {
       new Notice(t('notices.noteNotPublished'));
@@ -732,7 +732,7 @@ export default class HaloPlusPlugin extends Plugin {
    */
   private async updateFrontMatter(file: TFile, updates: Record<string, unknown>): Promise<void> {
     const content = await this.app.vault.read(file);
-    const frontmatter = parseFrontMatter(content);
+    const frontmatter = parseFrontMatter(content, this.logger);
 
     const newFrontmatter = {
       ...frontmatter,
