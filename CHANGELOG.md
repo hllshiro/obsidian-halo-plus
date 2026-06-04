@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-06-04
+
+### Fixed
+- 修复 logger：`log()`、`warn()`、`error()` 方法添加 verbose 条件判断，非 verbose 模式下静默输出
+
+### Changed
+- 重构 Logger 为全局单例模式，统一日志管理
+- 统一使用 Logger 对象替代直接 console 调用
+- 改进 Halo API 错误信息显示
+- 改进自动同步日志和初始化时序
+
 ## [0.7.0] - 2026-06-04
 
 ### Changed
