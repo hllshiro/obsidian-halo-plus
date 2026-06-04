@@ -37,6 +37,7 @@ export interface PluginSettings {
   autoSync: {
     enabled: boolean;
     folders: string[];
+    scanInterval: number;
   };
 }
 
@@ -55,6 +56,7 @@ const DEFAULT_SETTINGS: PluginSettings = {
   autoSync: {
     enabled: false,
     folders: [],
+    scanInterval: 30,
   },
 };
 
@@ -72,6 +74,9 @@ function djb2Hash(str: string): string {
 export default class HaloPlusPlugin extends Plugin {
   settings: PluginSettings = DEFAULT_SETTINGS;
   private contentHashCache: Map<string, string> = new Map();
+  private mtimeCache: Map<string, number> = new Map();
+  private autoSyncTimer: ReturnType<typeof setInterval> | null = null;
+  private autoSyncInitialized = false;
 
   async onload(): Promise<void> {
     await this.loadSettings();
@@ -148,26 +153,16 @@ export default class HaloPlusPlugin extends Plugin {
     // 添加设置面板
     this.addSettingTab(new SettingsTab(this.app, this));
 
-    // 注册文件监听（用于自动同步）
-    this.registerEvent(
-      this.app.vault.on('modify', async (file) => {
-        if (file instanceof TFile && file.extension === 'md') {
-          if (this.settings.autoSync.enabled) {
-            const isInSyncFolder = this.settings.autoSync.folders.some((folder) =>
-              file.path.startsWith(folder),
-            );
-            if (isInSyncFolder) {
-              await this.autoSync(file);
-            }
-          }
-        }
-      }),
-    );
+    // 启动自动同步扫描
+    if (this.settings.autoSync.enabled) {
+      this.startAutoSync();
+    }
 
     console.log('Halo Plus plugin loaded');
   }
 
   onunload(): void {
+    this.stopAutoSync();
     console.log('Halo Plus plugin unloaded');
   }
 
@@ -538,34 +533,89 @@ export default class HaloPlusPlugin extends Plugin {
   }
 
   /**
-   * 自动同步
+   * 启动自动同步定时扫描
    */
-  private async autoSync(file: TFile): Promise<void> {
-    // 防抖处理
-    if (this.autoSyncTimeout) {
-      clearTimeout(this.autoSyncTimeout);
-    }
+  startAutoSync(): void {
+    this.stopAutoSync();
+    const intervalMs = (this.settings.autoSync.scanInterval || 30) * 1000;
+    this.autoSyncTimer = setInterval(() => {
+      this.scanAndPublish();
+    }, intervalMs);
+    console.log(`[autoSync] Started with ${intervalMs / 1000}s interval`);
+  }
 
-    this.autoSyncTimeout = setTimeout(async () => {
+  /**
+   * 停止自动同步
+   */
+  stopAutoSync(): void {
+    if (this.autoSyncTimer) {
+      clearInterval(this.autoSyncTimer);
+      this.autoSyncTimer = null;
+    }
+    console.log('[autoSync] Stopped');
+  }
+
+  /**
+   * 重启自动同步（设置变更后调用）
+   */
+  restartAutoSync(): void {
+    this.stopAutoSync();
+    if (this.settings.autoSync.enabled) {
+      this.startAutoSync();
+    }
+  }
+
+  /**
+   * 扫描 watched folders 下所有 md 文件，两级检测后发布
+   */
+  private async scanAndPublish(): Promise<void> {
+    const folders = this.settings.autoSync.folders;
+    if (folders.length === 0) return;
+
+    const files = this.app.vault
+      .getMarkdownFiles()
+      .filter((file) => folders.some((folder) => file.path.startsWith(folder)));
+
+    for (const file of files) {
       try {
+        // 第一级：mtime 检测
+        const cachedMtime = this.mtimeCache.get(file.path);
+        if (cachedMtime === file.stat.mtime) continue;
+
+        // 第二级：内容 hash 检测
         const content = await this.app.vault.read(file);
         const contentHash = djb2Hash(content);
         const cachedHash = this.contentHashCache.get(file.path);
 
         if (cachedHash === contentHash) {
-          console.log(`[autoSync] Content unchanged for ${file.path}, skipping`);
-          return;
+          // 内容没变，只更新 mtime 缓存
+          this.mtimeCache.set(file.path, file.stat.mtime);
+          continue;
         }
 
-        await this.publishToHalo(file, true); // 强制跳过预览，避免打断用户输入
+        // 首次扫描只初始化缓存，不发布
+        if (!this.autoSyncInitialized) {
+          this.mtimeCache.set(file.path, file.stat.mtime);
+          this.contentHashCache.set(file.path, contentHash);
+          continue;
+        }
+
+        // 内容有变更，执行发布
+        console.log(`[autoSync] Change detected: ${file.path}, publishing...`);
+        await this.publishToHalo(file, true);
+        this.mtimeCache.set(file.path, file.stat.mtime);
         this.contentHashCache.set(file.path, contentHash);
       } catch (error) {
-        console.error(`Auto sync failed for ${file.path}:`, error);
+        console.error(`[autoSync] Failed to sync ${file.path}:`, error);
       }
-    }, 3000); // 3秒防抖，避免在打字过程中触发
-  }
+    }
 
-  private autoSyncTimeout: ReturnType<typeof setTimeout> | null = null;
+    // 首次扫描完成后标记，后续扫描才真正发布
+    if (!this.autoSyncInitialized) {
+      this.autoSyncInitialized = true;
+      console.log(`[autoSync] Initialized ${files.length} files`);
+    }
+  }
 
   /**
    * 获取默认站点

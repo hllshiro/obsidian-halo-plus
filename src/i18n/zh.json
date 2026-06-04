@@ -32,11 +32,13 @@
     "autoSync": {
       "title": "自动同步",
       "enableAutoSync": "启用自动同步",
-      "enableAutoSyncDesc": "保存笔记时自动发布",
+      "enableAutoSyncDesc": "定时扫描文件变更，自动发布有修改的内容",
       "addFolder": "添加文件夹",
       "addFolderDesc": "添加要同步的文件夹",
       "add": "添加",
-      "remove": "移除"
+      "remove": "移除",
+      "scanInterval": "扫描间隔",
+      "scanIntervalDesc": "自动扫描文件变更的时间间隔（秒）。减小此值可更快检测到变更，但会略微增加系统开销。默认 30 秒"
     }
   },
   "modals": {
