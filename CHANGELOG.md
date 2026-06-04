@@ -10,13 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.7.1] - 2026-06-04
 
 ### Fixed
-- 修复 logger：`log()`、`warn()`、`error()` 方法添加 verbose 条件判断，非 verbose 模式下静默输出
+- 修复日志输出：关闭调试模式后，控制台不再显示多余的插件日志
 
 ### Changed
-- 重构 Logger 为全局单例模式，统一日志管理
-- 统一使用 Logger 对象替代直接 console 调用
-- 改进 Halo API 错误信息显示
-- 改进自动同步日志和初始化时序
+- 优化错误提示：Halo API 请求失败时显示更清晰的错误信息
+- 改进自动同步：优化启动时的同步时序，减少不必要的日志输出
 
 ## [0.7.0] - 2026-06-04
 

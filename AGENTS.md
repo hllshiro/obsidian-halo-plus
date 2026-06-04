@@ -108,6 +108,13 @@ Conventional Commits 格式：`<type>(<scope>): <description>`
 
 **发布前必须更新 CHANGELOG.md**，将 `[Unreleased]` 内容移入新版本号。
 
+**CHANGELOG 编写规范：**
+- 站在用户角度描述变更，说明「对用户有什么影响」而非「改了什么代码」
+- 避免技术术语和实现细节，使用通俗易懂的表达
+- 示例：
+  - ✓「日志输出现在遵循 verbose 设置，非调试模式下控制台更简洁」
+  - ✗「log/warn/error 方法添加 isVerbose() 条件判断」
+
 ## 环境变量
 
 `.env`（已 gitignore）仅用于本地开发。模板见 `.env.example`：
