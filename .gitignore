@@ -53,3 +53,6 @@ pnpm-debug.log*
 reference/
 
 # Local test scripts
+
+# Superpowers internal docs
+docs/superpowers/
