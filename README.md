@@ -11,7 +11,7 @@
 
 - **Native Rendering**: Captures fully rendered HTML from Obsidian, supporting all installed plugins
 - **One-Click Publishing**: Command palette or right-click menu for quick publishing to Halo
-- **Auto Sync**: Configure folders to auto-publish on save
+- **Auto Sync**: Configure folders to auto-publish on file changes (mtime + content hash detection)
 - **Image Processing**: Upload to Halo or embed as Base64
 - **Offline Support**: Pure local execution, no external dependencies
 - **Article Management**: Publish, update, and delete articles
@@ -63,9 +63,9 @@ categories:
 
 ### 3. Auto Sync
 
-1. Enable "Folder Sync" in settings
+1. Enable "Auto Sync" in settings
 2. Add folder paths to sync
-3. Notes auto-publish after editing and saving
+3. The plugin periodically scans for file changes (default: every 30 seconds) and auto-publishes modified content
 
 ## Configuration
 

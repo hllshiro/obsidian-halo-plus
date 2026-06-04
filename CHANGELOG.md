@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-06-04
+
+### Changed
+- 自动同步机制重构：从事件触发改为定时扫描，通过文件修改时间（mtime）+ 内容 hash 两级检测，仅在内容真正变更时才发布
+- 新增扫描间隔设置，用户可自定义检测频率（默认 30 秒）
+- 首次扫描仅初始化缓存，不会触发发布，避免启动时的误触发
+
 ## [0.6.4] - 2026-06-03
 
 ### Changed

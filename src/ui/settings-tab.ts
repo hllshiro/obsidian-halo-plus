@@ -160,6 +160,7 @@ export class SettingsTab extends PluginSettingTab {
         toggle.setValue(this.plugin.settings.autoSync.enabled).onChange(async (value) => {
           this.plugin.settings.autoSync.enabled = value;
           await this.plugin.saveSettings();
+          this.plugin.restartAutoSync();
           this.display();
         }),
       );
@@ -204,6 +205,21 @@ export class SettingsTab extends PluginSettingTab {
                 await this.plugin.saveSettings();
                 this.display();
               }
+            }),
+        );
+
+      // 扫描间隔
+      new Setting(containerEl)
+        .setName(t('settings.autoSync.scanInterval'))
+        .setDesc(t('settings.autoSync.scanIntervalDesc'))
+        .addText((text) =>
+          text
+            .setPlaceholder('30')
+            .setValue(String(this.plugin.settings.autoSync.scanInterval || 30))
+            .onChange(async (value) => {
+              this.plugin.settings.autoSync.scanInterval = Number(value);
+              await this.plugin.saveSettings();
+              this.plugin.restartAutoSync();
             }),
         );
     }

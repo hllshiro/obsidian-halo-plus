@@ -32,11 +32,13 @@
     "autoSync": {
       "title": "Auto Sync",
       "enableAutoSync": "Enable auto sync",
-      "enableAutoSyncDesc": "Automatically publish notes when saved",
+      "enableAutoSyncDesc": "Periodically scan for file changes and auto-publish modified content",
       "addFolder": "Add folder",
       "addFolderDesc": "Add a folder to sync",
       "add": "Add",
-      "remove": "Remove"
+      "remove": "Remove",
+      "scanInterval": "Scan interval",
+      "scanIntervalDesc": "Time interval (seconds) between file change scans. Lower values detect changes faster with slightly more system overhead. Default: 30s"
     }
   },
   "modals": {
