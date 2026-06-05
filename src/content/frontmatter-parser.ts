@@ -14,6 +14,16 @@ export interface ImageCacheEntry {
 }
 
 /**
+ * 资源缓存条目
+ */
+export interface AssetCacheEntry {
+  localPath: string;
+  permalink: string;
+  attachmentName: string;
+  assetType: 'image' | 'attachment';
+}
+
+/**
  * FrontMatter 数据接口
  */
 export interface FrontMatterData {
@@ -28,7 +38,8 @@ export interface FrontMatterData {
     site: string;
     name: string;
     publish: boolean;
-    images?: ImageCacheEntry[];
+    images?: ImageCacheEntry[]; // 保留旧字段以支持向后兼容
+    assets?: AssetCacheEntry[]; // 新增字段
   };
   [key: string]: unknown;
 }
