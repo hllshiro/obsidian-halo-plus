@@ -202,8 +202,8 @@ export class PublishPreviewModal extends Modal {
       .setName(t('modals.publish.imageHandling'))
       .setDesc(t('modals.publish.imageHandlingDesc'))
       .addDropdown((dropdown) => {
-        dropdown.addOption('upload', t('settings.imageHandling.uploadToHalo'));
-        dropdown.addOption('base64', t('settings.imageHandling.embedAsBase64'));
+        dropdown.addOption('upload', t('settings.assetHandling.uploadToHalo'));
+        dropdown.addOption('base64', t('settings.assetHandling.embedAsBase64'));
         dropdown.setValue(this.imageMode);
         dropdown.onChange((value) => {
           this.imageMode = value as 'upload' | 'base64';
