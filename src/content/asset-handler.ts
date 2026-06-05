@@ -1,6 +1,7 @@
 import type { App, Notice, TFile } from 'obsidian';
 import type { HaloClient } from '../halo-client';
 import type { PluginSettings } from '../main';
+import type { HaloAttachment } from '../types';
 import { Logger } from '../utils/logger';
 
 // 资源类型枚举
@@ -35,11 +36,11 @@ export class AssetHandler {
   async processAssets(
     html: string,
     currentFile: TFile,
-    _client?: HaloClient,
-    _mode: 'upload' | 'base64' = 'upload',
-    _quality = 80,
-    _notice?: Notice,
-    _existingAssetCache?: AssetCacheEntry[],
+    client?: HaloClient,
+    mode: 'upload' | 'base64' = 'upload',
+    quality = 80,
+    notice?: Notice,
+    existingAssetCache?: AssetCacheEntry[],
   ): Promise<AssetProcessResult> {
     const localFiles = await this.extractLocalFiles(html, currentFile);
 
@@ -56,9 +57,124 @@ export class AssetHandler {
       }
     }
 
+    // 5. 上传或嵌入（图片支持base64，附件仅支持上传）
+    const uploadedMap = new Map<string, string>();
+    const newAssetCache: AssetCacheEntry[] = [];
+    const processedPaths = new Set<string>();
+
+    // 构建现有缓存的索引
+    const cacheIndex = new Map<string, AssetCacheEntry>();
+    if (existingAssetCache) {
+      for (const entry of existingAssetCache) {
+        cacheIndex.set(entry.localPath, entry);
+      }
+    }
+
+    // 验证现有缓存中的附件是否仍然存在
+    const validCacheEntries = new Map<string, AssetCacheEntry>();
+    if (mode === 'upload' && client && existingAssetCache && existingAssetCache.length > 0) {
+      for (const entry of existingAssetCache) {
+        try {
+          await client.coreApi.storage.attachment.getAttachment({
+            name: entry.attachmentName,
+          });
+          validCacheEntries.set(entry.localPath, entry);
+        } catch (error) {
+          this.logger.verbose(`Cache invalid: ${entry.localPath}`, error);
+        }
+      }
+    }
+
+    // 处理所有有效文件
+    for (const file of validFiles) {
+      try {
+        // 检查缓存
+        const cachedEntry = validCacheEntries.get(file.path);
+        if (cachedEntry) {
+          uploadedMap.set(file.path, cachedEntry.permalink);
+          if (!processedPaths.has(file.path)) {
+            newAssetCache.push(cachedEntry);
+            processedPaths.add(file.path);
+          }
+          continue;
+        }
+
+        // 读取文件
+        const fileBuffer = await this.app.vault.adapter.readBinary(file.path);
+        const mimeType = this.getMimeType(file.path);
+        const isImageFile = this.isImage(file.path);
+
+        if (mode === 'upload' && client) {
+          // 上传到Halo
+          if (notice) {
+            notice.setMessage(`正在上传附件 (${uploadedMap.size + 1}/${validFiles.length})`);
+          }
+
+          const blob = new Blob([fileBuffer], { type: mimeType });
+          const fileName = file.path.split('/').pop() || 'file';
+
+          const formData = new FormData();
+          formData.append('file', blob, fileName);
+          const uploadResponse = await client.httpClient.post(
+            '/apis/console.api.storage.halo.run/v1alpha1/attachments/-/upload',
+            formData,
+            { headers: { 'Content-Type': 'multipart/form-data' } },
+          );
+          const result = uploadResponse.data as HaloAttachment;
+
+          const permalink = result.status?.permalink;
+          const attachmentName = result.metadata?.name;
+          uploadedMap.set(file.path, permalink);
+
+          if (!processedPaths.has(file.path)) {
+            newAssetCache.push({
+              localPath: file.path,
+              permalink,
+              attachmentName,
+              assetType: isImageFile ? 'image' : 'attachment',
+            });
+            processedPaths.add(file.path);
+          }
+        } else if (isImageFile) {
+          // 图片Base64嵌入
+          const base64 = await this.imageToBase64(fileBuffer, mimeType, quality);
+          uploadedMap.set(file.path, `data:${mimeType};base64,${base64}`);
+        } else {
+          // 非图片附件不支持Base64
+          this.logger.warn(`Non-image attachments don't support Base64: ${file.path}`);
+        }
+      } catch (error) {
+        this.logger.error(`Failed to process file: ${file.path}`, error);
+      }
+    }
+
+    // 6. 替换HTML中的引用
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+
+    // 替换所有本地文件引用
+    for (const file of validFiles) {
+      const permalink = uploadedMap.get(file.path);
+      if (permalink) {
+        // 根据文件类型找到对应的HTML元素并替换
+        const elements = doc.querySelectorAll(`[src="${file.path}"], [href="${file.path}"]`);
+        for (const element of Array.from(elements)) {
+          if (
+            element.tagName === 'IMG' ||
+            element.tagName === 'VIDEO' ||
+            element.tagName === 'SOURCE'
+          ) {
+            element.setAttribute('src', permalink);
+          } else if (element.tagName === 'A') {
+            element.setAttribute('href', permalink);
+          }
+        }
+      }
+    }
+
     return {
-      html: html,
-      assetCache: [],
+      html: doc.body.innerHTML,
+      assetCache: newAssetCache,
     };
   }
 
