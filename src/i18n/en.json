@@ -20,26 +20,17 @@
       "skipPreview": "Skip preview",
       "skipPreviewDesc": "Skip preview modal and publish directly"
     },
-    "imageHandling": {
-      "title": "Image Handling",
-      "defaultMode": "Default mode",
-      "defaultModeDesc": "How to handle images in notes",
-      "uploadToHalo": "Upload to Halo",
-      "embedAsBase64": "Embed as Base64",
-      "base64Quality": "Base64 quality",
-      "base64QualityDesc": "Compression quality (0-100)"
-    },
     "assetHandling": {
       "title": "Asset Handling",
       "imageExtensions": "Image Extensions",
-      "imageExtensionsDesc": "Comma-separated list of image file extensions to treat as images",
-      "maxSizeMB": "Max Attachment Size (MB)",
-      "maxSizeMBDesc": "Maximum file size for attachments in MB",
-      "imageMode": "Image Processing Mode",
-      "imageModeDesc": "How to handle images in notes (only affects images)",
+      "imageExtensionsDesc": "Comma-separated list of file extensions treated as images",
+      "maxSizeMB": "Max File Size (MB)",
+      "maxSizeMBDesc": "Maximum file size for uploads",
+      "imageMode": "Image Upload Mode",
+      "imageModeDesc": "How to handle images (other attachments always upload)",
       "uploadToHalo": "Upload to Halo",
       "embedAsBase64": "Embed as Base64",
-      "base64Quality": "Base64 quality",
+      "base64Quality": "Base64 Quality",
       "base64QualityDesc": "Compression quality (0-100)"
     },
     "autoSync": {
