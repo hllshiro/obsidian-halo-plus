@@ -34,6 +34,10 @@ export interface PluginSettings {
   imageHandling: {
     defaultMode: 'upload' | 'base64';
     base64Quality: number;
+    imageExtensions: string[]; // 新增：图片类别配置
+  };
+  attachmentHandling: {
+    maxSizeMB: number; // 新增：附件大小限制
   };
   autoSync: {
     enabled: boolean;
@@ -55,6 +59,10 @@ const DEFAULT_SETTINGS: PluginSettings = {
   imageHandling: {
     defaultMode: 'upload',
     base64Quality: 80,
+    imageExtensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp'], // 新增
+  },
+  attachmentHandling: {
+    maxSizeMB: 100, // 新增
   },
   autoSync: {
     enabled: false,
