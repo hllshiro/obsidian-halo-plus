@@ -2,6 +2,7 @@ import { type App, Component, Modal, Notice, Setting, type TFile } from 'obsidia
 import { t } from '../i18n';
 import type { HaloSite, PluginSettings } from '../main';
 import { PreviewRenderer, type RenderResult } from '../renderer/preview-renderer';
+import { Logger } from '../utils/logger';
 
 /**
  * 发布预览 Modal 回调
@@ -122,6 +123,7 @@ export class PublishPreviewModal extends Modal {
       const clonedEl = this.renderResult.viewEl.cloneNode(true) as HTMLElement;
       previewContent.appendChild(clonedEl);
     } catch (error) {
+      Logger.getInstance().error('Failed to render preview:', error instanceof Error ? error.message : error);
       loadingEl.remove();
       const errorEl = container.createDiv({ cls: 'halo-plus-preview-error' });
       errorEl.createEl('p', { text: t('modals.publish.failedToRender') });
@@ -269,6 +271,7 @@ export class PublishPreviewModal extends Modal {
         notice.hide();
         this.close();
       } catch (error) {
+        Logger.getInstance().error('Publish failed:', error instanceof Error ? error.message : error);
         notice.setMessage(
           t('modals.publish.failedToPublish', {
             error: error instanceof Error ? error.message : 'Unknown error',

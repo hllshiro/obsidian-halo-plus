@@ -11,6 +11,8 @@
       "apiToken": "API Token",
       "setDefault": "Set as default",
       "currentDefault": "Current default",
+      "testConnection": "Test Connection",
+      "testingConnection": "Testing...",
       "save": "Save"
     },
     "publishBehavior": {
@@ -86,6 +88,7 @@
   "notices": {
     "siteNotConfigured": "Please configure a Halo site in settings first",
     "connectionFailed": "Failed to connect to Halo server",
+    "connectionSuccess": "Connection successful",
     "published": "Published: {title}",
     "updated": "Updated: {title}",
     "deleted": "Deleted: {title}",

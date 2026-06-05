@@ -86,6 +86,15 @@ export default class HaloPlusPlugin extends Plugin {
   async onload(): Promise<void> {
     await this.loadSettings();
 
+    // 初始化文件日志
+    const logDir = `${this.manifest.dir}/logs`;
+    const logFile = `${logDir}/halo-plus.log`;
+    const adapter = this.app.vault.adapter;
+    if (!(await adapter.exists(logDir))) {
+      await adapter.mkdir(logDir);
+    }
+    this.logger.setFileWriter((msg) => adapter.append(logFile, msg));
+
     // 初始化 i18n
     i18n.init(this.app);
 
