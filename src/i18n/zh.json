@@ -29,6 +29,19 @@
       "base64Quality": "Base64 质量",
       "base64QualityDesc": "压缩质量 (0-100)"
     },
+    "assetHandling": {
+      "title": "附件处理",
+      "imageExtensions": "图片扩展名",
+      "imageExtensionsDesc": "以逗号分隔的图片文件扩展名列表，这些扩展名将被视为图片",
+      "maxSizeMB": "附件大小限制 (MB)",
+      "maxSizeMBDesc": "附件的最大文件大小（MB）",
+      "imageMode": "图片处理模式",
+      "imageModeDesc": "如何处理笔记中的图片（仅影响图片）",
+      "uploadToHalo": "上传到 Halo",
+      "embedAsBase64": "嵌入为 Base64",
+      "base64Quality": "Base64 质量",
+      "base64QualityDesc": "压缩质量 (0-100)"
+    },
     "autoSync": {
       "title": "自动同步",
       "enableAutoSync": "启用自动同步",

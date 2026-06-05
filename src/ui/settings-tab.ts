@@ -26,8 +26,8 @@ export class SettingsTab extends PluginSettingTab {
     // 发布行为
     this.renderPublishBehavior(containerEl);
 
-    // 图片处理
-    this.renderImageHandling(containerEl);
+    // 附件处理（原图片处理）
+    this.renderAssetHandling(containerEl);
 
     // 自动同步
     this.renderAutoSync(containerEl);
@@ -120,16 +120,47 @@ export class SettingsTab extends PluginSettingTab {
       );
   }
 
-  private renderImageHandling(containerEl: HTMLElement): void {
-    containerEl.createEl('h3', { text: t('settings.imageHandling.title') });
+  private renderAssetHandling(containerEl: HTMLElement): void {
+    containerEl.createEl('h3', { text: t('settings.assetHandling.title') });
 
+    // 图片类别配置
     new Setting(containerEl)
-      .setName(t('settings.imageHandling.defaultMode'))
-      .setDesc(t('settings.imageHandling.defaultModeDesc'))
+      .setName(t('settings.assetHandling.imageExtensions'))
+      .setDesc(t('settings.assetHandling.imageExtensionsDesc'))
+      .addText((text) =>
+        text
+          .setPlaceholder('png,jpg,jpeg,gif,webp,svg,bmp')
+          .setValue(this.plugin.settings.imageHandling.imageExtensions.join(','))
+          .onChange(async (value) => {
+            this.plugin.settings.imageHandling.imageExtensions = value
+              .split(',')
+              .map((ext) => ext.trim().toLowerCase());
+            await this.plugin.saveSettings();
+          }),
+      );
+
+    // 附件大小限制
+    new Setting(containerEl)
+      .setName(t('settings.assetHandling.maxSizeMB'))
+      .setDesc(t('settings.assetHandling.maxSizeMBDesc'))
+      .addText((text) =>
+        text
+          .setPlaceholder('100')
+          .setValue(String(this.plugin.settings.attachmentHandling.maxSizeMB))
+          .onChange(async (value) => {
+            this.plugin.settings.attachmentHandling.maxSizeMB = Number(value);
+            await this.plugin.saveSettings();
+          }),
+      );
+
+    // 图片处理模式（仅影响图片）
+    new Setting(containerEl)
+      .setName(t('settings.assetHandling.imageMode'))
+      .setDesc(t('settings.assetHandling.imageModeDesc'))
       .addDropdown((dropdown) =>
         dropdown
-          .addOption('upload', t('settings.imageHandling.uploadToHalo'))
-          .addOption('base64', t('settings.imageHandling.embedAsBase64'))
+          .addOption('upload', t('settings.assetHandling.uploadToHalo'))
+          .addOption('base64', t('settings.assetHandling.embedAsBase64'))
           .setValue(this.plugin.settings.imageHandling.defaultMode)
           .onChange(async (value: 'upload' | 'base64') => {
             this.plugin.settings.imageHandling.defaultMode = value;
@@ -137,10 +168,11 @@ export class SettingsTab extends PluginSettingTab {
           }),
       );
 
+    // Base64质量设置（仅在图片处理模式为base64时显示）
     if (this.plugin.settings.imageHandling.defaultMode === 'base64') {
       new Setting(containerEl)
-        .setName(t('settings.imageHandling.base64Quality'))
-        .setDesc(t('settings.imageHandling.base64QualityDesc'))
+        .setName(t('settings.assetHandling.base64Quality'))
+        .setDesc(t('settings.assetHandling.base64QualityDesc'))
         .addSlider((slider) =>
           slider
             .setLimits(0, 100, 5)
