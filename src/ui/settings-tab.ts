@@ -1,7 +1,9 @@
 import { type App, Modal, Notice, PluginSettingTab, Setting } from 'obsidian';
 import { t } from '../i18n';
+import { createHaloClient, validateConnection } from '../halo-client';
 import type HaloPlusPlugin from '../main';
 import type { HaloSite } from '../main';
+import { Logger } from '../utils/logger';
 
 /**
  * 设置面板
@@ -339,6 +341,38 @@ class SiteModal extends Modal {
     });
 
     new Setting(contentEl)
+      .addButton((btn) => {
+        btn
+          .setButtonText(t('settings.siteManagement.testConnection'))
+          .setCta()
+          .onClick(async () => {
+            if (!this.data.url || !this.data.token) {
+              new Notice(t('notices.pleaseFillAllFields'));
+              return;
+            }
+            btn.setDisabled(true);
+            btn.setButtonText(t('settings.siteManagement.testingConnection'));
+            try {
+              const client = createHaloClient({
+                baseUrl: this.data.url,
+                token: this.data.token,
+                timeout: 10000,
+              });
+              const ok = await validateConnection(client);
+              if (ok) {
+                new Notice(t('notices.connectionSuccess'));
+              } else {
+                new Notice(t('notices.connectionFailed'));
+              }
+            } catch (e) {
+              Logger.getInstance().error('Test connection error:', e instanceof Error ? e.message : e);
+              new Notice(t('notices.connectionFailed'));
+            } finally {
+              btn.setDisabled(false);
+              btn.setButtonText(t('settings.siteManagement.testConnection'));
+            }
+          });
+      })
       .addButton((btn) =>
         btn.setButtonText(t('modals.publish.cancel')).onClick(() => {
           this.close();

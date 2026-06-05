@@ -34,11 +34,16 @@ export function createHaloClient(config: HaloClientConfig): HaloClient {
   };
 }
 
+import { Logger } from './utils/logger';
+
 export async function validateConnection(client: HaloClient): Promise<boolean> {
+  const logger = Logger.getInstance();
   try {
     await client.consoleApi.content.post.listPosts({ page: 0, size: 1 });
+    logger.log('Connection validated successfully');
     return true;
-  } catch {
+  } catch (e) {
+    logger.error('Connection validation failed:', e instanceof Error ? e.message : e);
     return false;
   }
 }

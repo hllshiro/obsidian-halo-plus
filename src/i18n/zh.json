@@ -11,6 +11,8 @@
       "apiToken": "API Token",
       "setDefault": "设为默认",
       "currentDefault": "当前默认",
+      "testConnection": "验证连接",
+      "testingConnection": "验证中...",
       "save": "保存"
     },
     "publishBehavior": {
@@ -86,6 +88,7 @@
   "notices": {
     "siteNotConfigured": "请先在设置中配置 Halo 站点",
     "connectionFailed": "连接 Halo 服务器失败",
+    "connectionSuccess": "连接成功",
     "published": "已发布: {title}",
     "updated": "已更新: {title}",
     "deleted": "已删除: {title}",
