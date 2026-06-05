@@ -34,18 +34,119 @@ export class AssetHandler {
   // 主处理方法
   async processAssets(
     html: string,
-    _currentFile: TFile,
+    currentFile: TFile,
     _client?: HaloClient,
     _mode: 'upload' | 'base64' = 'upload',
     _quality = 80,
     _notice?: Notice,
     _existingAssetCache?: AssetCacheEntry[],
   ): Promise<AssetProcessResult> {
-    // 实现细节将在后续任务中添加
+    const localFiles = await this.extractLocalFiles(html, currentFile);
+
+    const images = localFiles.filter((f) => this.isImage(f.path));
+    const attachments = localFiles.filter((f) => !this.isImage(f.path));
+
+    const validFiles: typeof localFiles = [];
+    for (const file of [...images, ...attachments]) {
+      const fileStat = await this.app.vault.adapter.stat(file.path);
+      if (fileStat && this.checkFileSize(file.path, fileStat.size)) {
+        validFiles.push(file);
+      } else {
+        this.logger.warn(`File size exceeds limit: ${file.path}`);
+      }
+    }
+
     return {
       html: html,
       assetCache: [],
     };
+  }
+
+  private async extractLocalFiles(
+    html: string,
+    currentFile: TFile,
+  ): Promise<Array<{ path: string; element: Element; type: 'img' | 'video' | 'a' | 'source' }>> {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const localFiles: Array<{
+      path: string;
+      element: Element;
+      type: 'img' | 'video' | 'a' | 'source';
+    }> = [];
+
+    const images = doc.querySelectorAll('img');
+    for (const img of Array.from(images)) {
+      const src = img.getAttribute('src');
+      if (src && !src.startsWith('http://') && !src.startsWith('https://')) {
+        const resolvedPath = await this.resolveFilePath(src, currentFile);
+        if (resolvedPath) {
+          localFiles.push({ path: resolvedPath, element: img, type: 'img' });
+        }
+      }
+    }
+
+    const videos = doc.querySelectorAll('video');
+    for (const video of Array.from(videos)) {
+      const src = video.getAttribute('src');
+      if (src && !src.startsWith('http://') && !src.startsWith('https://')) {
+        const resolvedPath = await this.resolveFilePath(src, currentFile);
+        if (resolvedPath) {
+          localFiles.push({ path: resolvedPath, element: video, type: 'video' });
+        }
+      }
+      const sources = video.querySelectorAll('source');
+      for (const source of Array.from(sources)) {
+        const sourceSrc = source.getAttribute('src');
+        if (sourceSrc && !sourceSrc.startsWith('http://') && !sourceSrc.startsWith('https://')) {
+          const resolvedPath = await this.resolveFilePath(sourceSrc, currentFile);
+          if (resolvedPath) {
+            localFiles.push({ path: resolvedPath, element: source, type: 'source' });
+          }
+        }
+      }
+    }
+
+    const links = doc.querySelectorAll('a');
+    for (const link of Array.from(links)) {
+      const href = link.getAttribute('href');
+      if (
+        href &&
+        !href.startsWith('http://') &&
+        !href.startsWith('https://') &&
+        !href.startsWith('#')
+      ) {
+        const resolvedPath = await this.resolveFilePath(href, currentFile);
+        if (resolvedPath) {
+          localFiles.push({ path: resolvedPath, element: link, type: 'a' });
+        }
+      }
+    }
+
+    return localFiles;
+  }
+
+  private async resolveFilePath(src: string, currentFile: TFile): Promise<string | null> {
+    if (src.startsWith('http://') || src.startsWith('https://')) {
+      return null;
+    }
+
+    if (src.startsWith('app://')) {
+      return this.getAbsolutePathFromObsidianSrc(src);
+    }
+
+    const resolvedFile = this.app.metadataCache.getFirstLinkpathDest(src, currentFile.path);
+    if (resolvedFile instanceof TFile) {
+      return resolvedFile.path;
+    }
+
+    if (src.startsWith('/')) {
+      const file = this.app.vault.getAbstractFileByPath(src);
+      if (file instanceof TFile) {
+        return file.path;
+      }
+    }
+
+    return null;
   }
 
   // 判断资源类型
