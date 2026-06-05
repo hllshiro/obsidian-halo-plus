@@ -1,4 +1,4 @@
-import type { App, Notice, TFile } from 'obsidian';
+import { type App, type Notice, TFile } from 'obsidian';
 import type { HaloClient } from '../halo-client';
 import type { PluginSettings } from '../main';
 import type { HaloAttachment } from '../types';
@@ -44,6 +44,15 @@ export class AssetHandler {
   ): Promise<AssetProcessResult> {
     const localFiles = await this.extractLocalFiles(html, currentFile);
 
+    this.logger.verbose('Extracted local files:', {
+      count: localFiles.length,
+      files: localFiles.map((f) => ({
+        path: f.path,
+        originalSrc: f.originalSrc,
+        type: f.type,
+      })),
+    });
+
     const images = localFiles.filter((f) => this.isImage(f.path));
     const attachments = localFiles.filter((f) => !this.isImage(f.path));
 
@@ -53,9 +62,21 @@ export class AssetHandler {
       if (fileStat && this.checkFileSize(file.path, fileStat.size)) {
         validFiles.push(file);
       } else {
-        this.logger.warn(`File size exceeds limit: ${file.path}`);
+        this.logger.warn(`File size exceeds limit or not found: ${file.path}`, {
+          fileStat,
+          maxSizeMB: this.settings.attachmentHandling.maxSizeMB,
+        });
       }
     }
+
+    this.logger.verbose('Valid files:', {
+      count: validFiles.length,
+      files: validFiles.map((f) => ({
+        path: f.path,
+        originalSrc: f.originalSrc,
+        type: f.type,
+      })),
+    });
 
     // 5. 上传或嵌入（图片支持base64，附件仅支持上传）
     const uploadedMap = new Map<string, string>();
@@ -149,15 +170,48 @@ export class AssetHandler {
     }
 
     // 6. 替换HTML中的引用
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
+    const doc = new DOMParser().parseFromString(html, 'text/html');
 
-    // 替换所有本地文件引用
     for (const file of validFiles) {
       const permalink = uploadedMap.get(file.path);
-      if (permalink) {
-        // 根据文件类型找到对应的HTML元素并替换
-        const elements = doc.querySelectorAll(`[src="${file.path}"], [href="${file.path}"]`);
+      if (!permalink) continue;
+
+      if (file.type === 'embed') {
+        // 处理文件嵌入：找到 file-embed-title 中的文件名文本，用 <a> 包裹
+        const embedTitles = doc.querySelectorAll('div.file-embed-title');
+        for (const titleDiv of Array.from(embedTitles)) {
+          // 文件名是 div 中的文本节点（在 icon span 之后）
+          const textNodes = Array.from(titleDiv.childNodes).filter(
+            (n) => n.nodeType === Node.TEXT_NODE && n.textContent?.trim(),
+          );
+          for (const textNode of textNodes) {
+            const fileName = textNode.textContent?.trim();
+            if (fileName === file.originalSrc) {
+              const link = doc.createElement('a');
+              link.setAttribute('href', permalink);
+              link.setAttribute('target', '_blank');
+              link.setAttribute('download', fileName);
+              link.textContent = fileName;
+              textNode.replaceWith(link);
+
+              // 删除对应的空 span.internal-embed.file-embed
+              const emptySpan = doc.querySelector(
+                `span.internal-embed.file-embed[src="${file.originalSrc}"]`,
+              );
+              if (emptySpan) emptySpan.remove();
+
+              this.logger.verbose('Replaced embed (title link):', {
+                fileName,
+                permalink,
+              });
+            }
+          }
+        }
+      } else {
+        // 处理 img/video/source/a 类型
+        const elements = doc.querySelectorAll(
+          `[src="${file.originalSrc}"], [href="${file.originalSrc}"]`,
+        );
         for (const element of Array.from(elements)) {
           if (
             element.tagName === 'IMG' ||
@@ -181,13 +235,21 @@ export class AssetHandler {
   private async extractLocalFiles(
     html: string,
     currentFile: TFile,
-  ): Promise<Array<{ path: string; element: Element; type: 'img' | 'video' | 'a' | 'source' }>> {
+  ): Promise<
+    Array<{
+      path: string;
+      originalSrc: string;
+      element: Element;
+      type: 'img' | 'video' | 'a' | 'source' | 'embed';
+    }>
+  > {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
     const localFiles: Array<{
       path: string;
+      originalSrc: string;
       element: Element;
-      type: 'img' | 'video' | 'a' | 'source';
+      type: 'img' | 'video' | 'a' | 'source' | 'embed';
     }> = [];
 
     const images = doc.querySelectorAll('img');
@@ -196,7 +258,7 @@ export class AssetHandler {
       if (src && !src.startsWith('http://') && !src.startsWith('https://')) {
         const resolvedPath = await this.resolveFilePath(src, currentFile);
         if (resolvedPath) {
-          localFiles.push({ path: resolvedPath, element: img, type: 'img' });
+          localFiles.push({ path: resolvedPath, originalSrc: src, element: img, type: 'img' });
         }
       }
     }
@@ -207,7 +269,7 @@ export class AssetHandler {
       if (src && !src.startsWith('http://') && !src.startsWith('https://')) {
         const resolvedPath = await this.resolveFilePath(src, currentFile);
         if (resolvedPath) {
-          localFiles.push({ path: resolvedPath, element: video, type: 'video' });
+          localFiles.push({ path: resolvedPath, originalSrc: src, element: video, type: 'video' });
         }
       }
       const sources = video.querySelectorAll('source');
@@ -216,7 +278,12 @@ export class AssetHandler {
         if (sourceSrc && !sourceSrc.startsWith('http://') && !sourceSrc.startsWith('https://')) {
           const resolvedPath = await this.resolveFilePath(sourceSrc, currentFile);
           if (resolvedPath) {
-            localFiles.push({ path: resolvedPath, element: source, type: 'source' });
+            localFiles.push({
+              path: resolvedPath,
+              originalSrc: sourceSrc,
+              element: source,
+              type: 'source',
+            });
           }
         }
       }
@@ -233,7 +300,19 @@ export class AssetHandler {
       ) {
         const resolvedPath = await this.resolveFilePath(href, currentFile);
         if (resolvedPath) {
-          localFiles.push({ path: resolvedPath, element: link, type: 'a' });
+          localFiles.push({ path: resolvedPath, originalSrc: href, element: link, type: 'a' });
+        }
+      }
+    }
+
+    // 处理 Obsidian 的文件嵌入（span/div 内部嵌入）
+    const embeds = doc.querySelectorAll('.internal-embed.file-embed[src], .file-embed[src]');
+    for (const embed of Array.from(embeds)) {
+      const src = embed.getAttribute('src');
+      if (src && !src.startsWith('http://') && !src.startsWith('https://')) {
+        const resolvedPath = await this.resolveFilePath(src, currentFile);
+        if (resolvedPath) {
+          localFiles.push({ path: resolvedPath, originalSrc: src, element: embed, type: 'embed' });
         }
       }
     }

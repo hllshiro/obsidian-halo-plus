@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - 修复旧版本设置数据加载异常：升级插件后不再需要清除数据文件，设置界面自动补齐缺失字段
+- 修复非媒体附件（如 exe、yaml、tar.gz 等）发布后链接丢失：附件名称现在正确显示为可点击的下载链接
+- 修复附件上传运行时报错：解决 TFile 类型在运行时未定义导致发布失败的问题
 
 ### Changed
 - 优化附件处理设置：调整选项顺序，附件大小限制移至首位，图片类别移至末位
