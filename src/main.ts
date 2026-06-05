@@ -1,7 +1,12 @@
 import type { Post as ApiPost, PostSpec as ApiPostSpec } from '@halo-dev/api-client';
 import { Component, Notice, Plugin, TFile } from 'obsidian';
 import { type AssetCacheEntry, AssetHandler } from './content/asset-handler';
-import { generateSlug, parseFrontMatter, stringifyFrontMatter } from './content/frontmatter-parser';
+import {
+  type ImageCacheEntry,
+  generateSlug,
+  parseFrontMatter,
+  stringifyFrontMatter,
+} from './content/frontmatter-parser';
 import { createHaloClient, validateConnection } from './halo-client';
 import { i18n, t } from './i18n';
 import { PreviewRenderer } from './renderer/preview-renderer';
@@ -219,6 +224,31 @@ export default class HaloPlusPlugin extends Plugin {
     });
   }
 
+  private migrateAssetCache(frontmatter: Record<string, unknown>): Record<string, unknown> {
+    const halo = frontmatter.halo as Record<string, unknown> | undefined;
+    if (!halo) return frontmatter;
+
+    if (halo.assets) return frontmatter;
+
+    if (halo.images && Array.isArray(halo.images)) {
+      const assets = (halo.images as ImageCacheEntry[]).map((img) => ({
+        ...img,
+        assetType: 'image' as const,
+      }));
+
+      return {
+        ...frontmatter,
+        halo: {
+          ...halo,
+          assets,
+          images: undefined,
+        },
+      };
+    }
+
+    return frontmatter;
+  }
+
   async publishToHalo(file: TFile, forceSkipPreview = false): Promise<void> {
     if (this.settings.sites.length === 0) {
       new Notice(t('notices.siteNotConfigured'));
@@ -226,7 +256,9 @@ export default class HaloPlusPlugin extends Plugin {
     }
 
     const content = await this.app.vault.read(file);
-    const frontmatter = parseFrontMatter(content);
+    let frontmatter = parseFrontMatter(content);
+
+    frontmatter = this.migrateAssetCache(frontmatter);
 
     if (forceSkipPreview || this.settings.publishBehavior.skipPreview) {
       const site = this.settings.sites.find((s) => s.isDefault) || this.settings.sites[0];
