@@ -1,12 +1,7 @@
 import type { Post as ApiPost, PostSpec as ApiPostSpec } from '@halo-dev/api-client';
 import { Component, Notice, Plugin, TFile } from 'obsidian';
-import { AssetHandler } from './content/asset-handler';
-import {
-  type ImageCacheEntry,
-  generateSlug,
-  parseFrontMatter,
-  stringifyFrontMatter,
-} from './content/frontmatter-parser';
+import { type AssetCacheEntry, AssetHandler } from './content/asset-handler';
+import { generateSlug, parseFrontMatter, stringifyFrontMatter } from './content/frontmatter-parser';
 import { createHaloClient, validateConnection } from './halo-client';
 import { i18n, t } from './i18n';
 import { PreviewRenderer } from './renderer/preview-renderer';
@@ -294,31 +289,40 @@ export default class HaloPlusPlugin extends Plugin {
         notice?.setMessage('正在处理附件...');
         this.logger.verbose('Processing attachments...');
 
-        const imageHandler = new AssetHandler(this.app, this.settings);
-        const existingImageCache = (frontmatter.halo?.images as ImageCacheEntry[]) || [];
-        this.logger.verbose('Existing image cache:', {
-          count: existingImageCache.length,
-          images: existingImageCache.map((img) => ({
-            localPath: img.localPath,
-            attachmentName: img.attachmentName,
+        const assetHandler = new AssetHandler(this.app, this.settings);
+        const existingAssetCache =
+          (frontmatter.halo?.assets as AssetCacheEntry[]) ||
+          (frontmatter.halo?.images as AssetCacheEntry[]) ||
+          [];
+
+        this.logger.verbose('Existing asset cache:', {
+          count: existingAssetCache.length,
+          assets: existingAssetCache.map((asset) => ({
+            localPath: asset.localPath,
+            attachmentName: asset.attachmentName,
+            assetType: asset.assetType,
           })),
         });
-        const imageResult = await imageHandler.processImages(
+
+        const assetResult = await assetHandler.processAssets(
           renderedHTML,
           file,
           client,
           imageMode,
           this.settings.imageHandling.base64Quality,
           notice,
-          existingImageCache,
+          existingAssetCache,
         );
-        const processedHTML = imageResult.html;
-        const updatedImageCache = imageResult.imageCache;
-        this.logger.verbose('Updated image cache:', {
-          count: updatedImageCache.length,
-          images: updatedImageCache.map((img) => ({
-            localPath: img.localPath,
-            attachmentName: img.attachmentName,
+
+        const processedHTML = assetResult.html;
+        const updatedAssetCache = assetResult.assetCache;
+
+        this.logger.verbose('Updated asset cache:', {
+          count: updatedAssetCache.length,
+          assets: updatedAssetCache.map((asset) => ({
+            localPath: asset.localPath,
+            attachmentName: asset.attachmentName,
+            assetType: asset.assetType,
           })),
         });
 
@@ -491,7 +495,7 @@ export default class HaloPlusPlugin extends Plugin {
               site: site.url,
               name: post.metadata.name,
               publish: this.settings.publishBehavior.publishByDefault,
-              images: updatedImageCache,
+              assets: updatedAssetCache,
             },
           });
         }
