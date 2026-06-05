@@ -2,7 +2,7 @@ import type { Post as ApiPost, PostSpec as ApiPostSpec } from '@halo-dev/api-cli
 import { type App, Component, type TFile } from 'obsidian';
 import { AssetHandler } from '../content/asset-handler';
 import {
-  type ImageCacheEntry,
+  type AssetCacheEntry,
   generateSlug,
   parseFrontMatter,
   stringifyFrontMatter,
@@ -62,19 +62,22 @@ export class SyncManager {
         const renderedHTML = renderResult.viewEl.innerHTML;
         renderResult.cleanup();
 
-        const imageHandler = new AssetHandler(this.app, this.plugin.settings);
-        const existingImageCache = (frontmatter.halo?.images as ImageCacheEntry[]) || [];
-        const imageResult = await imageHandler.processImages(
+        const assetHandler = new AssetHandler(this.app, this.plugin.settings);
+        const existingAssetCache =
+          (frontmatter.halo?.assets as AssetCacheEntry[]) ||
+          (frontmatter.halo?.images as AssetCacheEntry[]) ||
+          [];
+        const assetResult = await assetHandler.processAssets(
           renderedHTML,
           file,
           client,
           this.plugin.settings.imageHandling.defaultMode,
           this.plugin.settings.imageHandling.base64Quality,
           undefined,
-          existingImageCache,
+          existingAssetCache,
         );
-        const processedHTML = imageResult.html;
-        const updatedImageCache = imageResult.imageCache;
+        const processedHTML = assetResult.html;
+        const updatedAssetCache = assetResult.assetCache;
 
         let post: HaloPost | undefined;
         const effectiveTitle = frontmatter.title || file.basename;
@@ -234,7 +237,7 @@ export class SyncManager {
               site: site.url,
               name: post.metadata.name,
               publish: this.plugin.settings.publishBehavior.publishByDefault,
-              images: updatedImageCache,
+              assets: updatedAssetCache,
             },
           });
         }
