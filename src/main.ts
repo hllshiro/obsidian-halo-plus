@@ -1,12 +1,12 @@
 import type { Post as ApiPost, PostSpec as ApiPostSpec } from '@halo-dev/api-client';
 import { Component, Notice, Plugin, TFile } from 'obsidian';
+import { AssetHandler } from './content/asset-handler';
 import {
   type ImageCacheEntry,
   generateSlug,
   parseFrontMatter,
   stringifyFrontMatter,
 } from './content/frontmatter-parser';
-import { ImageHandler } from './content/image-handler';
 import { createHaloClient, validateConnection } from './halo-client';
 import { i18n, t } from './i18n';
 import { PreviewRenderer } from './renderer/preview-renderer';
@@ -294,7 +294,7 @@ export default class HaloPlusPlugin extends Plugin {
         notice?.setMessage('正在处理附件...');
         this.logger.verbose('Processing attachments...');
 
-        const imageHandler = new ImageHandler(this.app);
+        const imageHandler = new AssetHandler(this.app, this.settings);
         const existingImageCache = (frontmatter.halo?.images as ImageCacheEntry[]) || [];
         this.logger.verbose('Existing image cache:', {
           count: existingImageCache.length,

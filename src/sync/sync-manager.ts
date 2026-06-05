@@ -1,12 +1,12 @@
 import type { Post as ApiPost, PostSpec as ApiPostSpec } from '@halo-dev/api-client';
 import { type App, Component, type TFile } from 'obsidian';
+import { AssetHandler } from '../content/asset-handler';
 import {
   type ImageCacheEntry,
   generateSlug,
   parseFrontMatter,
   stringifyFrontMatter,
 } from '../content/frontmatter-parser';
-import { ImageHandler } from '../content/image-handler';
 import { createHaloClient, validateConnection } from '../halo-client';
 import type HaloPlusPlugin from '../main';
 import { PreviewRenderer } from '../renderer/preview-renderer';
@@ -62,7 +62,7 @@ export class SyncManager {
         const renderedHTML = renderResult.viewEl.innerHTML;
         renderResult.cleanup();
 
-        const imageHandler = new ImageHandler(this.app);
+        const imageHandler = new AssetHandler(this.app, this.plugin.settings);
         const existingImageCache = (frontmatter.halo?.images as ImageCacheEntry[]) || [];
         const imageResult = await imageHandler.processImages(
           renderedHTML,
