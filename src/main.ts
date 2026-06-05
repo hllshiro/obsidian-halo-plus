@@ -82,6 +82,34 @@ function djb2Hash(str: string): string {
 }
 
 /**
+ * 深度合并对象，确保嵌套对象的缺失字段从默认值中补齐
+ * 解决 Object.assign 浅拷贝导致旧数据覆盖新结构的问题
+ */
+function deepMerge<T>(defaults: T, data: Partial<T>): T {
+  const result = { ...defaults };
+  for (const key of Object.keys(data) as Array<keyof T>) {
+    const defaultVal = defaults[key];
+    const dataVal = data[key];
+    if (
+      dataVal !== null &&
+      dataVal !== undefined &&
+      typeof defaultVal === 'object' &&
+      !Array.isArray(defaultVal) &&
+      typeof dataVal === 'object' &&
+      !Array.isArray(dataVal)
+    ) {
+      result[key] = deepMerge(
+        defaultVal as Record<string, unknown>,
+        dataVal as Record<string, unknown>,
+      ) as T[keyof T];
+    } else if (dataVal !== undefined) {
+      result[key] = dataVal as T[keyof T];
+    }
+  }
+  return result;
+}
+
+/**
  * Halo Plus 插件主入口
  */
 export default class HaloPlusPlugin extends Plugin {
@@ -189,7 +217,7 @@ export default class HaloPlusPlugin extends Plugin {
 
   async loadSettings(): Promise<void> {
     const data = await this.loadData();
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, data);
+    this.settings = deepMerge(DEFAULT_SETTINGS, data || {});
 
     // 加载文件缓存（mtime + hash）
     if (data?.fileCache?.mtime) {

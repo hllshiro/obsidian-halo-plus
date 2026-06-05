@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- 修复旧版本设置数据加载异常：升级插件后不再需要清除数据文件，设置界面自动补齐缺失字段
+
+### Changed
+- 优化附件处理设置：调整选项顺序，附件大小限制移至首位，图片类别移至末位
+- 简化发布预览：移除预览界面中的附件处理选项，直接使用设置中的默认模式
+
 ## [0.7.1] - 2026-06-04
 
 ### Fixed
