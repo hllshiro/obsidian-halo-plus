@@ -16,11 +16,15 @@ export interface TranslationStructure {
       skipPreview: string;
       skipPreviewDesc: string;
     };
-    imageHandling: {
+    assetHandling: {
       title: string;
-      defaultMode: string;
-      defaultModeDesc: string;
-      uploadToHalo: string;
+      imageExtensions: string;
+      imageExtensionsDesc: string;
+      maxSizeMB: string;
+      maxSizeMBDesc: string;
+      imageMode: string;
+      imageModeDesc: string;
+      uploadAsAttachment: string;
       embedAsBase64: string;
       base64Quality: string;
       base64QualityDesc: string;

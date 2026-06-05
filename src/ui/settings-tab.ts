@@ -123,22 +123,6 @@ export class SettingsTab extends PluginSettingTab {
   private renderAssetHandling(containerEl: HTMLElement): void {
     containerEl.createEl('h3', { text: t('settings.assetHandling.title') });
 
-    // 图片类别配置
-    new Setting(containerEl)
-      .setName(t('settings.assetHandling.imageExtensions'))
-      .setDesc(t('settings.assetHandling.imageExtensionsDesc'))
-      .addText((text) =>
-        text
-          .setPlaceholder('png,jpg,jpeg,gif,webp,svg,bmp')
-          .setValue(this.plugin.settings.imageHandling.imageExtensions.join(','))
-          .onChange(async (value) => {
-            this.plugin.settings.imageHandling.imageExtensions = value
-              .split(',')
-              .map((ext) => ext.trim().toLowerCase());
-            await this.plugin.saveSettings();
-          }),
-      );
-
     // 附件大小限制
     new Setting(containerEl)
       .setName(t('settings.assetHandling.maxSizeMB'))
@@ -159,7 +143,7 @@ export class SettingsTab extends PluginSettingTab {
       .setDesc(t('settings.assetHandling.imageModeDesc'))
       .addDropdown((dropdown) =>
         dropdown
-          .addOption('upload', t('settings.assetHandling.uploadToHalo'))
+          .addOption('upload', t('settings.assetHandling.uploadAsAttachment'))
           .addOption('base64', t('settings.assetHandling.embedAsBase64'))
           .setValue(this.plugin.settings.imageHandling.defaultMode)
           .onChange(async (value: 'upload' | 'base64') => {
@@ -183,6 +167,22 @@ export class SettingsTab extends PluginSettingTab {
             }),
         );
     }
+
+    // 图片类别配置
+    new Setting(containerEl)
+      .setName(t('settings.assetHandling.imageExtensions'))
+      .setDesc(t('settings.assetHandling.imageExtensionsDesc'))
+      .addText((text) =>
+        text
+          .setPlaceholder('png,jpg,jpeg,gif,webp,svg,bmp')
+          .setValue(this.plugin.settings.imageHandling.imageExtensions.join(','))
+          .onChange(async (value) => {
+            this.plugin.settings.imageHandling.imageExtensions = value
+              .split(',')
+              .map((ext) => ext.trim().toLowerCase());
+            await this.plugin.saveSettings();
+          }),
+      );
   }
 
   private renderAutoSync(containerEl: HTMLElement): void {

@@ -28,7 +28,7 @@
       "maxSizeMBDesc": "Maximum file size for uploads",
       "imageMode": "Image Upload Mode",
       "imageModeDesc": "How to handle images (other attachments always upload)",
-      "uploadToHalo": "Upload to Halo",
+      "uploadAsAttachment": "Upload as attachment",
       "embedAsBase64": "Embed as Base64",
       "base64Quality": "Base64 Quality",
       "base64QualityDesc": "Compression quality (0-100)"

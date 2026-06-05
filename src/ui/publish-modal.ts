@@ -76,11 +76,11 @@ export class PublishModal extends Modal {
     imageModeEl.createEl('label', { text: t('modals.publish.imageHandling') });
     const selectEl = imageModeEl.createEl('select');
     selectEl.createEl('option', {
-      text: t('settings.assetHandling.uploadToHalo'),
+      text: t('settings.assetHandling.uploadAsAttachment'),
       value: 'upload',
     });
     selectEl.createEl('option', {
-      text: t('settings.assetHandling.embedAsBase64'),
+      text: t('settings.imageHandling.embedAsBase64'),
       value: 'base64',
     });
     selectEl.value = this.imageMode;
