@@ -1,6 +1,6 @@
 {
   "name": "obsidian-halo-plus",
-  "version": "0.7.1",
+  "version": "1.0.0",
   "description": "Publish Obsidian notes to Halo blog with native rendering support",
   "main": "dist/main.js",
   "scripts": {
